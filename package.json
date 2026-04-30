@@ -30,22 +30,18 @@
     },
     "files": [
       "src/**/*",
-      "assets/**/*",
       "package.json"
     ],
     "win": {
       "target": [
         { "target": "nsis", "arch": ["x64"] },
         { "target": "portable", "arch": ["x64"] }
-      ],
-      "icon": "assets/icon.ico"
+      ]
     },
     "nsis": {
       "oneClick": true,
       "perMachine": false,
-      "deleteAppDataOnUninstall": false,
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico"
+      "deleteAppDataOnUninstall": false
     },
     "publish": {
       "provider": "github",
