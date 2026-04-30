@@ -9,7 +9,7 @@ const CLAUDE_URL = 'https://claude.ai';
 class ApiService extends EventEmitter {
   constructor() {
     super();
-    this._session = session.fromPartition(CLAUDE_SESSION);
+    this._session = null;
     this._window = null;
     this._isReady = false;
     this._orgId = null;
@@ -17,6 +17,9 @@ class ApiService extends EventEmitter {
   }
 
   init() {
+    // session API requires app to be ready — initialize here, not in constructor
+    this._session = session.fromPartition(CLAUDE_SESSION);
+
     this._window = new BrowserWindow({
       show: false,
       width: 1200,
