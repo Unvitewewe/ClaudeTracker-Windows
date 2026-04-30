@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'">
+  <title>Claude Tracker – Settings</title>
+  <style>
+    :root {
+      --bg: #1c1c1e; --bg2: #2c2c2e; --bg3: #3a3a3c;
+      --text: #f2f2f7; --text2: #8e8e93; --accent: #c084fc;
+      --accent-dim: #7c3aed44; --green: #34c759; --red: #ff453a;
+      --border: #3a3a3c; --radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      padding: 14px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      -webkit-app-region: drag;
+    }
+    .header h1 { font-size: 16px; font-weight: 600; }
+
+    .scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+    }
+    .scroll::-webkit-scrollbar { width: 4px; }
+    .scroll::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
+
+    .section { margin-bottom: 20px; }
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin-bottom: 8px;
+    }
+
+    .card {
+      background: var(--bg2);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .row:last-child { border-bottom: none; }
+    .row-label { flex: 1; }
+    .row-label .title { font-size: 13px; }
+    .row-label .sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+    /* Toggle */
+    .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: var(--bg3);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-thumb {
+      position: absolute;
+      width: 16px; height: 16px;
+      top: 2px; left: 2px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      pointer-events: none;
+    }
+    .toggle input:checked ~ .toggle-track { background: var(--green); }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(16px); }
+
+    /* Slider */
+    .slider-row { flex-direction: column; align-items: stretch; gap: 6px; }
+    .slider-header { display: flex; align-items: center; justify-content: space-between; }
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: var(--bg3);
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+    .slider-value { font-size: 12px; color: var(--accent); font-weight: 500; min-width: 40px; text-align: right; }
+
+    /* Buttons */
+    .btn {
+      padding: 6px 14px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.danger { color: var(--red); }
+    .btn.danger:hover { border-color: var(--red); background: #ff453a22; }
+    .btn.primary { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+    /* Account card */
+    .account-info { font-size: 12px; color: var(--text2); }
+    .account-name { font-size: 13px; color: var(--text); font-weight: 500; }
+    .plan-pill {
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+      margin-left: 6px;
+    }
+
+    /* Disclaimer */
+    .disclaimer {
+      font-size: 11px;
+      color: var(--text2);
+      text-align: center;
+      padding: 12px 0 4px;
+      line-height: 1.5;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="header"><h1>Settings</h1></div>
+
+<div class="scroll">
+
+  <!-- Account -->
+  <div class="section">
+    <div class="section-title">Account</div>
+    <div class="card">
+      <!-- Signed in -->
+      <div class="row" id="accountRow" style="display:none">
+        <div class="row-label">
+          <div class="account-name" id="acctName">—<span class="plan-pill hidden" id="acctPlan"></span></div>
+          <div class="account-info" id="acctEmail">—</div>
+        </div>
+        <button class="btn danger" id="signOutBtn">Sign Out</button>
+      </div>
+      <!-- Signed out -->
+      <div class="row" id="signInRow">
+        <div class="row-label"><div class="title">Not signed in</div></div>
+        <button class="btn primary" id="signInBtn">Sign In</button>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Check for updates</div></div>
+        <button class="btn" id="checkUpdatesBtn">Check Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Display -->
+  <div class="section">
+    <div class="section-title">Display</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-label"><div class="title">Menu bar window</div></div>
+        <select id="menuBarWindow" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
+          <option value="five_hour">5-Hour</option>
+          <option value="seven_day">7-Day</option>
+        </select>
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label"><div class="title">Popup scale</div></div>
+          <span class="slider-value" id="scaleVal">100%</span>
+        </div>
+        <input type="range" id="popupScale" min="75" max="150" step="25" value="100">
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Charts tab</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="showChartsTab">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Pace indicator</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="showPaceIndicator">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row slider-row" id="paceRateWindowRow">
+        <div class="slider-header">
+          <div class="row-label">
+            <div class="title">Pace rate window</div>
+            <div class="sub">Lookback period for pace calculation</div>
+          </div>
+          <span class="slider-value" id="paceRateVal">5m</span>
+        </div>
+        <input type="range" id="paceRateWindow" min="30" max="1800" step="30" value="300">
+      </div>
+    </div>
+  </div>
+
+  <!-- Refresh -->
+  <div class="section">
+    <div class="section-title">Refresh Interval</div>
+    <div class="card">
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label"><div class="title">Check usage every</div></div>
+          <span class="slider-value" id="refreshVal">30s</span>
+        </div>
+        <input type="range" id="refreshInterval" min="5" max="60" step="5" value="30">
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset notifications -->
+  <div class="section">
+    <div class="section-title">Window Reset Notifications</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-label"><div class="title">5-Hour window reset</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="notifyFiveHourReset">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">7-Day window reset</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="notifySevenDayReset">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label">
+            <div class="title">Notification duration</div>
+            <div class="sub">0 = persistent until dismissed</div>
+          </div>
+          <span class="slider-value" id="notifyDurationVal">5s</span>
+        </div>
+        <input type="range" id="notifyToastDuration" min="0" max="30" step="1" value="5">
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Sound</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="notifySound">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Test notification</div></div>
+        <button class="btn" id="testResetBtn">Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pace alerts -->
+  <div class="section">
+    <div class="section-title">Pace Alerts</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-label">
+          <div class="title">Pace alerts</div>
+          <div class="sub">Notify when limit will be hit before reset</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="paceAlertEnabled">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row slider-row" id="paceThresholdRow">
+        <div class="slider-header">
+          <div class="row-label">
+            <div class="title">Alert threshold</div>
+            <div class="sub">Warn when < N minutes before limit</div>
+          </div>
+          <span class="slider-value" id="paceThresholdVal">30m</span>
+        </div>
+        <input type="range" id="paceAlertThreshold" min="5" max="60" step="5" value="30">
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label"><div class="title">Alert duration</div></div>
+          <span class="slider-value" id="paceDurationVal">5s</span>
+        </div>
+        <input type="range" id="paceAlertToastDuration" min="0" max="30" step="1" value="5">
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Sound</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="paceAlertSound">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Test pace alert</div></div>
+        <button class="btn" id="testPaceBtn">Test</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    Unofficial tool — not affiliated with or endorsed by Anthropic.<br>
+    Uses undocumented claude.ai endpoints that may change at any time.
+  </div>
+</div>
+
+<script>
+  let settings = {};
+
+  function fmtSeconds(s) {
+    if (s < 60) return s + 's';
+    return Math.round(s / 60) + 'm';
+  }
+
+  function bind(id, key, transform) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', () => {
+      let val;
+      if (el.type === 'checkbox') val = el.checked;
+      else if (el.type === 'range') val = Number(el.value);
+      else val = el.value;
+      if (transform) val = transform(val);
+      settings[key] = val;
+      window.claude.setSetting(key, val);
+    });
+  }
+
+  function updateUI(s) {
+    settings = s;
+
+    const setCheck = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+    const setRange = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+    const setSelect = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+
+    setSelect('menuBarWindow', s.menuBarWindow || 'five_hour');
+    setRange('popupScale', (s.popupScale || 1.0) * 100);
+    document.getElementById('scaleVal').textContent = Math.round((s.popupScale || 1.0) * 100) + '%';
+    setCheck('showChartsTab', s.showChartsTab !== false);
+    setCheck('showPaceIndicator', s.showPaceIndicator !== false);
+    setRange('paceRateWindow', s.paceRateWindow || 300);
+    document.getElementById('paceRateVal').textContent = fmtSeconds(s.paceRateWindow || 300);
+
+    setRange('refreshInterval', s.refreshInterval || 30);
+    document.getElementById('refreshVal').textContent = (s.refreshInterval || 30) + 's';
+
+    setCheck('notifyFiveHourReset', s.notifyFiveHourReset !== false);
+    setCheck('notifySevenDayReset', s.notifySevenDayReset !== false);
+    setRange('notifyToastDuration', s.notifyToastDuration ?? 5);
+    document.getElementById('notifyDurationVal').textContent =
+      (s.notifyToastDuration ?? 5) === 0 ? '∞' : (s.notifyToastDuration ?? 5) + 's';
+    setCheck('notifySound', s.notifySound !== false);
+
+    setCheck('paceAlertEnabled', s.paceAlertEnabled !== false);
+    setRange('paceAlertThreshold', s.paceAlertThreshold || 30);
+    document.getElementById('paceThresholdVal').textContent = (s.paceAlertThreshold || 30) + 'm';
+    setRange('paceAlertToastDuration', s.paceAlertToastDuration ?? 5);
+    document.getElementById('paceDurationVal').textContent =
+      (s.paceAlertToastDuration ?? 5) === 0 ? '∞' : (s.paceAlertToastDuration ?? 5) + 's';
+    setCheck('paceAlertSound', s.paceAlertSound !== false);
+  }
+
+  function updateAccountUI(state) {
+    if (!state) return;
+    const signedIn = state.isAuthenticated;
+    document.getElementById('accountRow').style.display = signedIn ? '' : 'none';
+    document.getElementById('signInRow').style.display = signedIn ? 'none' : '';
+    if (signedIn && state.accountInfo) {
+      document.getElementById('acctName').childNodes[0].textContent = state.accountInfo.fullName || '';
+      document.getElementById('acctEmail').textContent = state.accountInfo.emailAddress || '';
+      const plan = state.accountInfo.plan;
+      const pill = document.getElementById('acctPlan');
+      if (plan && plan !== 'Unknown') { pill.textContent = plan; pill.classList.remove('hidden'); }
+      else pill.classList.add('hidden');
+    }
+  }
+
+  // Live slider labels
+  document.getElementById('popupScale').addEventListener('input', e => {
+    document.getElementById('scaleVal').textContent = e.target.value + '%';
+  });
+  document.getElementById('paceRateWindow').addEventListener('input', e => {
+    document.getElementById('paceRateVal').textContent = fmtSeconds(Number(e.target.value));
+  });
+  document.getElementById('refreshInterval').addEventListener('input', e => {
+    document.getElementById('refreshVal').textContent = e.target.value + 's';
+  });
+  document.getElementById('notifyToastDuration').addEventListener('input', e => {
+    document.getElementById('notifyDurationVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's';
+  });
+  document.getElementById('paceAlertThreshold').addEventListener('input', e => {
+    document.getElementById('paceThresholdVal').textContent = e.target.value + 'm';
+  });
+  document.getElementById('paceAlertToastDuration').addEventListener('input', e => {
+    document.getElementById('paceDurationVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's';
+  });
+
+  // Bind all settings
+  document.getElementById('popupScale').addEventListener('change', e => {
+    window.claude.setSetting('popupScale', Number(e.target.value) / 100);
+  });
+
+  bind('menuBarWindow', 'menuBarWindow');
+  bind('showChartsTab', 'showChartsTab');
+  bind('showPaceIndicator', 'showPaceIndicator');
+  bind('paceRateWindow', 'paceRateWindow');
+  bind('refreshInterval', 'refreshInterval');
+  bind('notifyFiveHourReset', 'notifyFiveHourReset');
+  bind('notifySevenDayReset', 'notifySevenDayReset');
+  bind('notifyToastDuration', 'notifyToastDuration');
+  bind('notifySound', 'notifySound');
+  bind('paceAlertEnabled', 'paceAlertEnabled');
+  bind('paceAlertThreshold', 'paceAlertThreshold');
+  bind('paceAlertToastDuration', 'paceAlertToastDuration');
+  bind('paceAlertSound', 'paceAlertSound');
+
+  document.getElementById('signOutBtn').addEventListener('click', () => window.claude.signOut());
+  document.getElementById('signInBtn').addEventListener('click', () => window.claude.signIn());
+  document.getElementById('testResetBtn').addEventListener('click', () => window.claude.testResetNotification());
+  document.getElementById('testPaceBtn').addEventListener('click', () => window.claude.testPaceNotification());
+  document.getElementById('checkUpdatesBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('checkUpdatesBtn');
+    btn.textContent = 'Checking…';
+    btn.disabled = true;
+    const result = await window.claude.checkUpdates();
+    btn.disabled = false;
+    btn.textContent = result?.hasUpdate ? `v${result.version} available` : 'Up to date';
+    setTimeout(() => { btn.textContent = 'Check Now'; }, 4000);
+  });
+
+  window.claude.onStateUpdate(state => updateAccountUI(state));
+  window.claude.onSettingsUpdate(s => updateUI(s));
+
+  (async () => {
+    const [settings, state] = await Promise.all([
+      window.claude.getSettings(),
+      window.claude.getState(),
+    ]);
+    updateUI(settings);
+    updateAccountUI(state);
+  })();
+</script>
+</body>
+</html>

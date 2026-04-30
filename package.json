@@ -1,0 +1,56 @@
+{
+  "name": "claude-tracker-windows",
+  "version": "1.0.0",
+  "description": "Windows port of ClaudeTracker — monitor Claude AI usage limits from the system tray",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "build:dir": "electron-builder --win --dir",
+    "portable": "electron-builder --win portable"
+  },
+  "author": {
+    "name": "Unvitewewe",
+    "url": "https://github.com/Unvitewewe"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.unvitewewe.claude-tracker",
+    "productName": "Claude Tracker",
+    "copyright": "Copyright © 2025 Unvitewewe",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Unvitewewe",
+      "repo": "ClaudeTracker-Windows"
+    }
+  }
+}

@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data:">
+  <title>Claude Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #1c1c1e;
+      --bg2: #2c2c2e;
+      --bg3: #3a3a3c;
+      --text: #f2f2f7;
+      --text2: #8e8e93;
+      --accent: #c084fc;
+      --accent-dim: #7c3aed44;
+      --green: #34c759;
+      --yellow: #ffd60a;
+      --orange: #ff9f0a;
+      --red: #ff453a;
+      --radius: 10px;
+      --border: #3a3a3c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px 8px;
+      border-bottom: 1px solid var(--border);
+      -webkit-app-region: drag;
+    }
+    .header-left { display: flex; align-items: center; gap: 8px; }
+    .header h1 { font-size: 15px; font-weight: 600; }
+    .plan-badge {
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+    }
+    .header-right { display: flex; gap: 4px; -webkit-app-region: no-drag; }
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .icon-btn:hover { background: var(--bg3); color: var(--text); }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      padding: 8px 16px 0;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      background: none;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab:hover:not(.active) { color: var(--text); }
+    .tab.hidden { display: none; }
+
+    /* ── Content ── */
+    .content { flex: 1; overflow-y: auto; padding: 12px 16px; }
+    .content::-webkit-scrollbar { width: 4px; }
+    .content::-webkit-scrollbar-track { background: transparent; }
+    .content::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
+
+    /* ── Auth state ── */
+    .auth-prompt {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .auth-prompt .emoji { font-size: 36px; }
+    .auth-prompt p { color: var(--text2); font-size: 13px; line-height: 1.5; }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+
+    /* ── Loading ── */
+    .loading-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0 10px;
+      color: var(--text2);
+      font-size: 12px;
+    }
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid var(--bg3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Window card ── */
+    .window-card {
+      background: var(--bg2);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .window-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .window-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text2);
+    }
+    .window-pct {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Progress bar ── */
+    .progress-track {
+      height: 6px;
+      background: var(--bg3);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease, background 0.4s ease;
+    }
+
+    /* ── Window meta ── */
+    .window-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text2);
+    }
+    .meta-row .label { }
+    .meta-row .value { font-variant-numeric: tabular-nums; }
+    .pace-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+    .pace-rate { color: var(--text); font-weight: 500; }
+    .pace-warn { color: var(--orange); }
+    .pace-ok { color: var(--green); }
+    .pace-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Alert banner ── */
+    .alert-banner {
+      background: #ff9f0a22;
+      border: 1px solid #ff9f0a55;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--orange);
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .alert-banner.danger {
+      background: #ff453a22;
+      border-color: #ff453a55;
+      color: var(--red);
+    }
+
+    /* ── Extra usage ── */
+    .extra-usage {
+      background: var(--bg2);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .extra-usage .value { color: var(--text); font-weight: 500; }
+
+    /* ── Charts tab ── */
+    .charts-container { display: flex; flex-direction: column; gap: 10px; }
+    .time-range-bar {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .range-btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .range-btn.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .range-btn:hover:not(.active) { color: var(--text); border-color: var(--bg3); }
+    .chart-wrapper {
+      background: var(--bg2);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+    .chart-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin-bottom: 8px;
+    }
+    canvas { max-width: 100%; }
+    .no-history {
+      text-align: center;
+      color: var(--text2);
+      padding: 30px;
+      font-size: 12px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px 10px;
+      border-top: 1px solid var(--border);
+    }
+    .footer-left { display: flex; align-items: center; gap: 6px; }
+    .updated-text { font-size: 11px; color: var(--text2); }
+    .footer-right { display: flex; gap: 4px; }
+    .btn-small {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-small:hover { color: var(--text); border-color: var(--bg3); }
+    .btn-small.danger:hover { color: var(--red); border-color: var(--red); }
+
+    /* ── Hidden ── */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <h1>Claude Tracker</h1>
+    <span class="plan-badge hidden" id="planBadge">Pro</span>
+  </div>
+  <div class="header-right">
+    <button class="icon-btn" id="refreshBtn" title="Refresh">↻</button>
+    <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs" id="tabsBar">
+  <button class="tab active" data-tab="usage">Usage</button>
+  <button class="tab hidden" data-tab="charts" id="chartsTab">Charts</button>
+</div>
+
+<!-- Usage tab -->
+<div class="content" id="tabUsage">
+
+  <!-- Auth prompt -->
+  <div id="authPrompt" class="auth-prompt hidden">
+    <div class="emoji">🔒</div>
+    <h2 style="font-size:15px">Sign in to Claude</h2>
+    <p>Claude Tracker needs access to your claude.ai session to display usage data.</p>
+    <button class="btn-primary" id="signInBtn">Sign In</button>
+    <p style="font-size:11px;color:var(--text2)">Unofficial tool — not affiliated with Anthropic</p>
+  </div>
+
+  <!-- Main usage content -->
+  <div id="usageContent">
+    <div class="loading-row hidden" id="loadingRow">
+      <div class="spinner"></div>
+      <span>Loading usage data…</span>
+    </div>
+
+    <!-- 5-hour window -->
+    <div class="window-card" id="card5hr">
+      <div class="window-header">
+        <span class="window-label">5-Hour Window</span>
+        <span class="window-pct" id="pct5hr">—</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="bar5hr" style="width:0%;background:var(--green)"></div>
+      </div>
+      <div class="window-meta">
+        <div class="meta-row">
+          <span class="label">Resets in</span>
+          <span class="value" id="reset5hr">—</span>
+        </div>
+        <div class="pace-row hidden" id="pace5hrRow">
+          <div class="pace-dot" id="pace5hrDot"></div>
+          <span class="pace-rate" id="pace5hrRate"></span>
+          <span id="pace5hrMsg"></span>
+        </div>
+      </div>
+      <div class="alert-banner hidden" id="alert5hr"></div>
+    </div>
+
+    <!-- 7-day window -->
+    <div class="window-card" id="card7day">
+      <div class="window-header">
+        <span class="window-label">7-Day Window</span>
+        <span class="window-pct" id="pct7day">—</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="bar7day" style="width:0%;background:var(--green)"></div>
+      </div>
+      <div class="window-meta">
+        <div class="meta-row">
+          <span class="label">Resets in</span>
+          <span class="value" id="reset7day">—</span>
+        </div>
+        <div class="pace-row hidden" id="pace7dayRow">
+          <div class="pace-dot" id="pace7dayDot"></div>
+          <span class="pace-rate" id="pace7dayRate"></span>
+          <span id="pace7dayMsg"></span>
+        </div>
+      </div>
+      <div class="alert-banner hidden" id="alert7day"></div>
+    </div>
+
+    <!-- Extra usage (pay-as-you-go) -->
+    <div class="extra-usage hidden" id="extraUsage">
+      <span>Pay-as-you-go credits used</span>
+      <span class="value" id="extraUsageVal">—</span>
+    </div>
+
+    <!-- Error state -->
+    <div id="errorState" class="hidden" style="color:var(--red);padding:12px;font-size:12px;background:var(--bg2);border-radius:var(--radius)"></div>
+  </div>
+</div>
+
+<!-- Charts tab -->
+<div class="content hidden" id="tabCharts">
+  <div class="charts-container">
+    <div class="time-range-bar" id="timeRangeBar">
+      <button class="range-btn" data-range="1">1h</button>
+      <button class="range-btn" data-range="3">3h</button>
+      <button class="range-btn" data-range="12">12h</button>
+      <button class="range-btn active" data-range="24">1d</button>
+      <button class="range-btn" data-range="168">7d</button>
+      <button class="range-btn" data-range="720">30d</button>
+    </div>
+
+    <div class="chart-wrapper">
+      <div class="chart-title">5-Hour Window</div>
+      <canvas id="chart5hr" height="120"></canvas>
+    </div>
+    <div class="chart-wrapper">
+      <div class="chart-title">7-Day Window</div>
+      <canvas id="chart7day" height="120"></canvas>
+    </div>
+    <div class="no-history hidden" id="noHistory">No history yet — data is collected every 5 minutes</div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="footer-left">
+    <span class="updated-text" id="updatedText">—</span>
+  </div>
+  <div class="footer-right">
+    <button class="btn-small" id="footerSettings">Settings</button>
+    <button class="btn-small danger" id="quitBtn">Quit</button>
+  </div>
+</div>
+
+<script>
+  // ═══════════════════════════════════════════════
+  // State
+  // ═══════════════════════════════════════════════
+  let currentState = null;
+  let currentSettings = null;
+  let activeTab = 'usage';
+  let chartRange = 24; // hours
+  let charts = {};
+  let countdownInterval = null;
+
+  // ═══════════════════════════════════════════════
+  // Utilities
+  // ═══════════════════════════════════════════════
+  function urgencyColor(util) {
+    const u = Math.min(1.0, Math.max(0, util));
+    const hue = Math.round((1 - u) * 120);
+    const sat = Math.round(60 + u * 35);
+    return `hsl(${hue},${sat}%,50%)`;
+  }
+
+  function fmtPct(util) {
+    return Math.round(util * 100) + '%';
+  }
+
+  function fmtDuration(seconds) {
+    if (seconds <= 0) return 'now';
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (d > 0) return `${d}d ${h}h ${m}m`;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+
+  function secondsUntil(isoStr) {
+    if (!isoStr) return 0;
+    const diff = (new Date(isoStr) - Date.now()) / 1000;
+    return Math.max(0, diff);
+  }
+
+  function timeAgo(isoStr) {
+    if (!isoStr) return '—';
+    const secs = Math.round((Date.now() - new Date(isoStr)) / 1000);
+    if (secs < 5) return 'just now';
+    if (secs < 60) return `${secs}s ago`;
+    if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+    return `${Math.floor(secs / 3600)}h ago`;
+  }
+
+  function computePace(history, windowKey) {
+    if (!history || history.length < 2) return null;
+    const maxAgeMs = (currentSettings?.paceRateWindow || 300) * 1000;
+    const now = Date.now();
+    const pts = history
+      .filter(p => (now - p.timestamp) < maxAgeMs && p[windowKey] != null)
+      .map(p => ({ t: p.timestamp / 1000, v: p[windowKey] }));
+    if (pts.length < 2) return null;
+    const span = pts[pts.length - 1].t - pts[0].t;
+    if (span < 15) return null;
+
+    const lambda = Math.log(2) / ((maxAgeMs / 1000) / 2);
+    let sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
+    for (const { t, v } of pts) {
+      const age = now / 1000 - t;
+      const w = Math.exp(-lambda * age);
+      sw += w; swx += w * t; swy += w * v; swxx += w * t * t; swxy += w * t * v;
+    }
+    const denom = sw * swxx - swx * swx;
+    if (Math.abs(denom) < 1e-10) return null;
+    const slope = (sw * swxy - swx * swy) / denom;
+    const ratePerHour = slope * 3600;
+    const cur = pts[pts.length - 1].v;
+    const timeToFull = slope > 0 ? ((1 - cur) / slope) : null;
+    return { ratePerHour, timeToFull };
+  }
+
+  // ═══════════════════════════════════════════════
+  // Render
+  // ═══════════════════════════════════════════════
+  function renderState(state) {
+    currentState = state;
+    if (!state) return;
+
+    const authenticated = state.isAuthenticated;
+    document.getElementById('authPrompt').classList.toggle('hidden', authenticated);
+    document.getElementById('usageContent').classList.toggle('hidden', !authenticated);
+
+    if (!authenticated) return;
+
+    // Plan badge
+    const plan = state.accountInfo?.plan;
+    const badge = document.getElementById('planBadge');
+    if (plan && plan !== 'Unknown') {
+      badge.textContent = plan;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+
+    // Loading
+    document.getElementById('loadingRow').classList.toggle('hidden', !state.isLoading);
+
+    // Error
+    const errEl = document.getElementById('errorState');
+    if (state.error) {
+      errEl.textContent = '⚠ ' + state.error;
+      errEl.classList.remove('hidden');
+    } else {
+      errEl.classList.add('hidden');
+    }
+
+    const usage = state.usage;
+    if (!usage) return;
+
+    renderWindow('5hr', usage.five_hour, state.history, 'fiveHour');
+    renderWindow('7day', usage.seven_day, state.history, 'sevenDay');
+
+    // Extra usage
+    const extra = usage.extra_usage;
+    const extraEl = document.getElementById('extraUsage');
+    if (extra?.is_enabled && extra.used_credits != null) {
+      extraEl.classList.remove('hidden');
+      const pct = extra.utilization ? ` (${Math.round(extra.utilization * 100)}%)` : '';
+      document.getElementById('extraUsageVal').textContent =
+        `$${extra.used_credits.toFixed(2)} / $${(extra.monthly_limit || 0).toFixed(2)}${pct}`;
+    } else {
+      extraEl.classList.add('hidden');
+    }
+
+    // Updated text
+    document.getElementById('updatedText').textContent =
+      state.lastUpdated ? 'Updated ' + timeAgo(state.lastUpdated) : '—';
+
+    // Charts
+    if (activeTab === 'charts') renderCharts();
+  }
+
+  function renderWindow(id, win, history, histKey) {
+    if (!win) {
+      document.getElementById(`card${id}`).classList.add('hidden');
+      return;
+    }
+    document.getElementById(`card${id}`).classList.remove('hidden');
+
+    const util = win.utilization;
+    const color = urgencyColor(util);
+
+    document.getElementById(`pct${id}`).textContent = fmtPct(util);
+    document.getElementById(`pct${id}`).style.color = color;
+
+    const bar = document.getElementById(`bar${id}`);
+    bar.style.width = Math.min(100, Math.round(util * 100)) + '%';
+    bar.style.background = color;
+
+    // Pace
+    const showPace = currentSettings?.showPaceIndicator !== false;
+    const paceRow = document.getElementById(`pace${id}Row`);
+    if (showPace && history?.length > 1) {
+      const pace = computePace(history, histKey);
+      if (pace) {
+        paceRow.classList.remove('hidden');
+        const rateStr = (pace.ratePerHour >= 0 ? '+' : '') + pace.ratePerHour.toFixed(1) + '%/hr';
+        document.getElementById(`pace${id}Rate`).textContent = rateStr;
+        const dot = document.getElementById(`pace${id}Dot`);
+        const resetSecs = secondsUntil(win.resets_at);
+
+        let msg = '';
+        let warnClass = 'pace-ok';
+        if (pace.timeToFull != null && pace.ratePerHour > 0) {
+          if (pace.timeToFull < resetSecs) {
+            warnClass = 'pace-warn';
+            msg = `· full in ${fmtDuration(pace.timeToFull)} ⚠`;
+          } else {
+            msg = `· on track`;
+          }
+        }
+        document.getElementById(`pace${id}Msg`).textContent = msg;
+        document.getElementById(`pace${id}Msg`).className = warnClass;
+        dot.style.background = pace.ratePerHour > 0 ? color : 'var(--text2)';
+      } else {
+        paceRow.classList.add('hidden');
+      }
+    } else {
+      paceRow.classList.add('hidden');
+    }
+
+    // Alert banner
+    const alertEl = document.getElementById(`alert${id}`);
+    const threshold = (currentSettings?.paceAlertThreshold || 30) * 60;
+    const pace2 = computePace(history, histKey);
+    if (pace2?.timeToFull != null && pace2.timeToFull < threshold && util < 1.0) {
+      alertEl.classList.remove('hidden');
+      alertEl.className = 'alert-banner' + (util > 0.9 ? ' danger' : '');
+      alertEl.textContent = `⚠ Limit reached in ~${fmtDuration(pace2.timeToFull)}`;
+    } else {
+      alertEl.classList.add('hidden');
+    }
+  }
+
+  function startCountdown() {
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdownInterval = setInterval(() => {
+      if (!currentState?.usage) return;
+      const u = currentState.usage;
+      if (u.five_hour) {
+        document.getElementById('reset5hr').textContent =
+          fmtDuration(secondsUntil(u.five_hour.resets_at));
+      }
+      if (u.seven_day) {
+        document.getElementById('reset7day').textContent =
+          fmtDuration(secondsUntil(u.seven_day.resets_at));
+      }
+      if (currentState.lastUpdated) {
+        document.getElementById('updatedText').textContent =
+          'Updated ' + timeAgo(currentState.lastUpdated);
+      }
+    }, 1000);
+  }
+
+  // ═══════════════════════════════════════════════
+  // Charts
+  // ═══════════════════════════════════════════════
+  const CHART_OPTS = {
+    responsive: true,
+    animation: false,
+    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+    scales: {
+      x: {
+        type: 'time',
+        time: { tooltipFormat: 'MMM d, HH:mm' },
+        grid: { color: '#2c2c2e' },
+        ticks: { color: '#8e8e93', maxTicksLimit: 6, font: { size: 10 } },
+      },
+      y: {
+        min: 0,
+        max: 100,
+        grid: { color: '#2c2c2e' },
+        ticks: {
+          color: '#8e8e93',
+          font: { size: 10 },
+          callback: v => v + '%'
+        }
+      }
+    }
+  };
+
+  function renderCharts() {
+    if (!currentState) return;
+    const history = currentState.history || [];
+    const cutoff = Date.now() - chartRange * 3600 * 1000;
+    const pts = history.filter(p => p.timestamp >= cutoff);
+
+    if (pts.length < 2) {
+      document.getElementById('noHistory').classList.remove('hidden');
+    } else {
+      document.getElementById('noHistory').classList.add('hidden');
+    }
+
+    renderChart('chart5hr', pts, 'fiveHour', '#c084fc');
+    renderChart('chart7day', pts, 'sevenDay', '#34c759');
+  }
+
+  function renderChart(canvasId, pts, key, color) {
+    const data = pts
+      .filter(p => p[key] != null)
+      .map(p => ({ x: p.timestamp, y: Math.round(p[key] * 100) }));
+
+    if (charts[canvasId]) {
+      charts[canvasId].data.datasets[0].data = data;
+      charts[canvasId].update();
+      return;
+    }
+
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    charts[canvasId] = new Chart(canvas, {
+      type: 'line',
+      data: {
+        datasets: [{
+          data,
+          borderColor: color,
+          backgroundColor: color + '22',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.3,
+        }]
+      },
+      options: {
+        ...JSON.parse(JSON.stringify(CHART_OPTS)),
+        plugins: {
+          ...CHART_OPTS.plugins,
+          tooltip: {
+            ...CHART_OPTS.plugins.tooltip,
+            callbacks: { label: ctx => ctx.parsed.y + '%' }
+          }
+        }
+      }
+    });
+  }
+
+  // ═══════════════════════════════════════════════
+  // Tab switching
+  // ═══════════════════════════════════════════════
+  function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.getElementById('tabUsage').classList.toggle('hidden', tab !== 'usage');
+    document.getElementById('tabCharts').classList.toggle('hidden', tab !== 'charts');
+    if (tab === 'charts') renderCharts();
+  }
+
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  document.querySelectorAll('.range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      chartRange = parseInt(btn.dataset.range);
+      renderCharts();
+    });
+  });
+
+  // ═══════════════════════════════════════════════
+  // Settings integration
+  // ═══════════════════════════════════════════════
+  function applySettings(s) {
+    currentSettings = s;
+    const showCharts = s?.showChartsTab !== false;
+    document.getElementById('chartsTab').classList.toggle('hidden', !showCharts);
+    if (!showCharts && activeTab === 'charts') switchTab('usage');
+    if (currentState) renderState(currentState);
+  }
+
+  // ═══════════════════════════════════════════════
+  // IPC wiring
+  // ═══════════════════════════════════════════════
+  document.getElementById('signInBtn').addEventListener('click', () => window.claude.signIn());
+  document.getElementById('refreshBtn').addEventListener('click', () => window.claude.refresh());
+  document.getElementById('settingsBtn').addEventListener('click', () => window.claude.openSettings());
+  document.getElementById('footerSettings').addEventListener('click', () => window.claude.openSettings());
+  document.getElementById('quitBtn').addEventListener('click', () => window.claude.quit());
+
+  window.claude.onStateUpdate(state => {
+    renderState(state);
+  });
+
+  // ═══════════════════════════════════════════════
+  // Init
+  // ═══════════════════════════════════════════════
+  (async () => {
+    try {
+      const [state, settings] = await Promise.all([
+        window.claude.getState(),
+        window.claude.getSettings(),
+      ]);
+      applySettings(settings);
+      renderState(state);
+      startCountdown();
+    } catch (e) {
+      console.error('Init error', e);
+    }
+  })();
+</script>
+</body>
+</html>
