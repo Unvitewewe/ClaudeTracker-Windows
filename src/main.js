@@ -418,15 +418,16 @@ async function refreshAccount(accountId) {
       store.set('accounts', accounts);
     }
 
-    // Reset detection
+    // Reset detection (compare on normalized 0–1 scale)
+    const normUsage = normalizeUsage(usage);
     const prev = prevUsages.get(accountId);
     if (prev) {
-      checkForReset(accountId, 'five_hour', prev.five_hour,  usage.five_hour,  '5-Hour Window');
-      checkForReset(accountId, 'seven_day', prev.seven_day,  usage.seven_day,  '7-Day Window');
+      checkForReset(accountId, 'five_hour', prev.five_hour,  normUsage.five_hour,  '5-Hour Window');
+      checkForReset(accountId, 'seven_day', prev.seven_day,  normUsage.seven_day,  '7-Day Window');
     }
-    prevUsages.set(accountId, usage);
+    prevUsages.set(accountId, normUsage);
 
-    st.usage       = usage;
+    st.usage       = normUsage;
     st.error       = null;
     st.isLoading   = false;
     st.lastUpdated = new Date().toISOString();
@@ -508,6 +509,16 @@ function computePaceNode(history, key) {
 function fmtDur(s) {
   const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function normalizeUsage(raw) {
+  if (!raw) return raw;
+  // API returns utilization as 0–100; UI expects 0–1 fraction
+  const normW = w => (!w || w.utilization == null) ? w
+    : { ...w, utilization: w.utilization > 1 ? w.utilization / 100 : w.utilization };
+  const normE = e => (!e || e.utilization == null) ? e
+    : { ...e, utilization: e.utilization > 1 ? e.utilization / 100 : e.utilization };
+  return { ...raw, five_hour: normW(raw.five_hour), seven_day: normW(raw.seven_day), extra_usage: normE(raw.extra_usage) };
 }
 
 // ══════════════════════════════════════════════
