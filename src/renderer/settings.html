@@ -176,10 +176,17 @@
 
   <!-- Display -->
   <div class="section">
-    <div class="section-title">Display</div>
+    <div class="section-title" data-i18n="sDisplay">Display</div>
     <div class="card">
       <div class="row">
-        <div class="row-label"><div class="title">Menu bar window</div></div>
+        <div class="row-label"><div class="title" data-i18n="sLanguage">Language</div></div>
+        <select id="language" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
+          <option value="en">English</option>
+          <option value="es">Español</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title" data-i18n="sMenuBarWindow">Menu bar window</div></div>
         <select id="menuBarWindow" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">
           <option value="five_hour">5-Hour</option>
           <option value="seven_day">7-Day</option>
@@ -383,6 +390,22 @@
 <script>
   let settings = {};
 
+  const TRANSLATIONS = {
+    en: { sDisplay: 'Display', sLanguage: 'Language', sMenuBarWindow: 'Menu bar window' },
+    es: { sDisplay: 'Pantalla', sLanguage: 'Idioma',  sMenuBarWindow: 'Ventana de menú' },
+  };
+
+  function t(key) {
+    const lang = settings.language || 'en';
+    return (TRANSLATIONS[lang] ?? TRANSLATIONS.en)[key] ?? TRANSLATIONS.en[key] ?? key;
+  }
+
+  function applyTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = t(el.dataset.i18n);
+    });
+  }
+
   function fmtSeconds(s) {
     if (s < 60) return s + 's';
     return Math.round(s / 60) + 'm';
@@ -409,6 +432,8 @@
     const setRange = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
     const setSelect = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
 
+    setSelect('language', s.language || 'en');
+    applyTranslations();
     setSelect('menuBarWindow', s.menuBarWindow || 'five_hour');
     setRange('popupScale', (s.popupScale || 1.0) * 100);
     document.getElementById('scaleVal').textContent = Math.round((s.popupScale || 1.0) * 100) + '%';
@@ -534,6 +559,8 @@
     window.claude.setSetting('popupScale', Number(e.target.value) / 100);
   });
 
+  bind('language', 'language');
+  document.getElementById('language').addEventListener('change', applyTranslations);
   bind('menuBarWindow', 'menuBarWindow');
   bind('showChartsTab', 'showChartsTab');
   bind('showPaceIndicator', 'showPaceIndicator');

@@ -55,6 +55,8 @@
       letter-spacing: 0.3px;
     }
     .header-right { display: flex; gap: 4px; -webkit-app-region: no-drag; }
+    .plan-header { font-size: 11px; color: var(--text2); padding: 2px 0 6px; }
+    .plan-header strong { color: var(--accent); font-weight: 600; }
     .icon-btn {
       background: none;
       border: none;
@@ -390,8 +392,8 @@
 
 <!-- Tabs -->
 <div class="tabs" id="tabsBar">
-  <button class="tab active" data-tab="usage">Usage</button>
-  <button class="tab hidden" data-tab="charts" id="chartsTab">Charts</button>
+  <button class="tab active" data-tab="usage" data-i18n="tabUsage">Usage</button>
+  <button class="tab hidden" data-tab="charts" id="chartsTab" data-i18n="tabCharts">Charts</button>
 </div>
 
 <!-- Usage tab -->
@@ -400,23 +402,28 @@
   <!-- Auth prompt -->
   <div id="authPrompt" class="auth-prompt hidden">
     <div class="emoji">🔒</div>
-    <h2 style="font-size:15px">Sign in to Claude</h2>
-    <p>Claude Tracker needs access to your claude.ai session to display usage data.</p>
-    <button class="btn-primary" id="signInBtn">Sign In</button>
-    <p style="font-size:11px;color:var(--text2)">Unofficial tool — not affiliated with Anthropic</p>
+    <h2 style="font-size:15px" data-i18n="signIn">Sign in to Claude</h2>
+    <p data-i18n="signInDesc">Claude Tracker needs access to your claude.ai session to display usage data.</p>
+    <button class="btn-primary" id="signInBtn" data-i18n="signInBtn">Sign In</button>
+    <p style="font-size:11px;color:var(--text2)" data-i18n="unofficial">Unofficial tool — not affiliated with Anthropic</p>
   </div>
 
   <!-- Main usage content -->
   <div id="usageContent">
     <div class="loading-row hidden" id="loadingRow">
       <div class="spinner"></div>
-      <span>Loading usage data…</span>
+      <span data-i18n="loading">Loading usage data…</span>
+    </div>
+
+    <!-- Plan header -->
+    <div class="plan-header hidden" id="planHeader">
+      <span data-i18n="plan">Plan</span>: <strong id="planName">—</strong>
     </div>
 
     <!-- 5-hour window -->
     <div class="window-card" id="card5hr">
       <div class="window-header">
-        <span class="window-label">5-Hour Window</span>
+        <span class="window-label" data-i18n="window5hr">5-Hour Window</span>
         <span class="window-pct" id="pct5hr">—</span>
       </div>
       <div class="progress-track">
@@ -424,7 +431,7 @@
       </div>
       <div class="window-meta">
         <div class="meta-row">
-          <span class="label">Resets in</span>
+          <span class="label" data-i18n="resetsIn">Resets in</span>
           <span class="value" id="reset5hr">—</span>
         </div>
         <div class="pace-row hidden" id="pace5hrRow">
@@ -439,7 +446,7 @@
     <!-- 7-day window -->
     <div class="window-card" id="card7day">
       <div class="window-header">
-        <span class="window-label">7-Day Window</span>
+        <span class="window-label" data-i18n="window7day">7-Day Window</span>
         <span class="window-pct" id="pct7day">—</span>
       </div>
       <div class="progress-track">
@@ -447,7 +454,7 @@
       </div>
       <div class="window-meta">
         <div class="meta-row">
-          <span class="label">Resets in</span>
+          <span class="label" data-i18n="resetsIn">Resets in</span>
           <span class="value" id="reset7day">—</span>
         </div>
         <div class="pace-row hidden" id="pace7dayRow">
@@ -461,7 +468,7 @@
 
     <!-- Extra usage (pay-as-you-go) -->
     <div class="extra-usage hidden" id="extraUsage">
-      <span>Pay-as-you-go credits used</span>
+      <span data-i18n="payAsYouGo">Pay-as-you-go credits used</span>
       <span class="value" id="extraUsageVal">—</span>
     </div>
 
@@ -490,7 +497,7 @@
       <div class="chart-title">7-Day Window</div>
       <canvas id="chart7day" height="120"></canvas>
     </div>
-    <div class="no-history hidden" id="noHistory">No history yet — data is collected every 5 minutes</div>
+    <div class="no-history hidden" id="noHistory" data-i18n="noHistory">No history yet — data is collected every 5 minutes</div>
   </div>
 </div>
 
@@ -500,12 +507,74 @@
     <span class="updated-text" id="updatedText">—</span>
   </div>
   <div class="footer-right">
-    <button class="btn-small" id="footerSettings">Settings</button>
+    <button class="btn-small" id="footerSettings" data-i18n="settingsBtn">Settings</button>
     <button class="btn-small danger" id="quitBtn">Quit</button>
   </div>
 </div>
 
 <script>
+  // ═══════════════════════════════════════════════
+  // i18n
+  // ═══════════════════════════════════════════════
+  const TRANSLATIONS = {
+    en: {
+      tabUsage: 'Usage', tabCharts: 'Charts',
+      signIn: 'Sign in to Claude',
+      signInDesc: 'Claude Tracker needs access to your claude.ai session to display usage data.',
+      signInBtn: 'Sign In',
+      unofficial: 'Unofficial tool — not affiliated with Anthropic',
+      loading: 'Loading usage data…',
+      plan: 'Plan',
+      window5hr: '5-Hour Window', window7day: '7-Day Window',
+      resetsIn: 'Resets in',
+      payAsYouGo: 'Pay-as-you-go credits used',
+      noHistory: 'No history yet — data is collected every 5 minutes',
+      settingsBtn: 'Settings',
+      onTrack: '· on track',
+      fullIn: d => `· full in ${d} ⚠`,
+      limitReached: d => `⚠ Limit reached in ~${d}`,
+      updated: t => `Updated ${t}`,
+      justNow: 'just now',
+      secsAgo: n => `${n}s ago`,
+      minsAgo: n => `${Math.floor(n / 60)}m ago`,
+      hrsAgo: n => `${Math.floor(n / 3600)}h ago`,
+    },
+    es: {
+      tabUsage: 'Uso', tabCharts: 'Gráficos',
+      signIn: 'Iniciar sesión en Claude',
+      signInDesc: 'Claude Tracker necesita acceso a tu sesión de claude.ai para mostrar los datos de uso.',
+      signInBtn: 'Iniciar sesión',
+      unofficial: 'Herramienta no oficial — no afiliada con Anthropic',
+      loading: 'Cargando datos de uso…',
+      plan: 'Plan',
+      window5hr: 'Ventana de 5 horas', window7day: 'Ventana de 7 días',
+      resetsIn: 'Se reinicia en',
+      payAsYouGo: 'Créditos de pago por uso utilizados',
+      noHistory: 'Sin historial aún — los datos se recopilan cada 5 minutos',
+      settingsBtn: 'Ajustes',
+      onTrack: '· al ritmo',
+      fullIn: d => `· lleno en ${d} ⚠`,
+      limitReached: d => `⚠ Límite alcanzado en ~${d}`,
+      updated: t => `Actualizado ${t}`,
+      justNow: 'ahora mismo',
+      secsAgo: n => `hace ${n}s`,
+      minsAgo: n => `hace ${Math.floor(n / 60)}m`,
+      hrsAgo: n => `hace ${Math.floor(n / 3600)}h`,
+    },
+  };
+
+  function t(key, ...args) {
+    const lang = currentSettings?.language || 'en';
+    const v = (TRANSLATIONS[lang] ?? TRANSLATIONS.en)[key] ?? TRANSLATIONS.en[key] ?? key;
+    return typeof v === 'function' ? v(...args) : v;
+  }
+
+  function applyTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = t(el.dataset.i18n);
+    });
+  }
+
   // ═══════════════════════════════════════════════
   // State
   // ═══════════════════════════════════════════════
@@ -551,10 +620,10 @@
   function timeAgo(isoStr) {
     if (!isoStr) return '—';
     const secs = Math.round((Date.now() - new Date(isoStr)) / 1000);
-    if (secs < 5) return 'just now';
-    if (secs < 60) return `${secs}s ago`;
-    if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
-    return `${Math.floor(secs / 3600)}h ago`;
+    if (secs < 5)    return t('justNow');
+    if (secs < 60)   return t('secsAgo', secs);
+    if (secs < 3600) return t('minsAgo', secs);
+    return t('hrsAgo', secs);
   }
 
   function computePace(history, windowKey) {
@@ -630,14 +699,18 @@
 
     if (!authenticated) return;
 
-    // Plan badge
+    // Plan badge (header) + plan header (usage section)
     const plan = state.accountInfo?.plan;
     const badge = document.getElementById('planBadge');
+    const planHeader = document.getElementById('planHeader');
     if (plan && plan !== 'Unknown') {
       badge.textContent = plan;
       badge.classList.remove('hidden');
+      document.getElementById('planName').textContent = plan;
+      planHeader.classList.remove('hidden');
     } else {
       badge.classList.add('hidden');
+      planHeader.classList.add('hidden');
     }
 
     // Loading
@@ -672,7 +745,7 @@
 
     // Updated text
     document.getElementById('updatedText').textContent =
-      state.lastUpdated ? 'Updated ' + timeAgo(state.lastUpdated) : '—';
+      state.lastUpdated ? t('updated', timeAgo(state.lastUpdated)) : '—';
 
     // Charts
     if (activeTab === 'charts') renderCharts();
@@ -712,9 +785,9 @@
         if (pace.timeToFull != null && pace.ratePerHour > 0) {
           if (pace.timeToFull < resetSecs) {
             warnClass = 'pace-warn';
-            msg = `· full in ${fmtDuration(pace.timeToFull)} ⚠`;
+            msg = t('fullIn', fmtDuration(pace.timeToFull));
           } else {
-            msg = `· on track`;
+            msg = t('onTrack');
           }
         }
         document.getElementById(`pace${id}Msg`).textContent = msg;
@@ -734,7 +807,7 @@
     if (pace2?.timeToFull != null && pace2.timeToFull < threshold && util < 1.0) {
       alertEl.classList.remove('hidden');
       alertEl.className = 'alert-banner' + (util > 0.9 ? ' danger' : '');
-      alertEl.textContent = `⚠ Limit reached in ~${fmtDuration(pace2.timeToFull)}`;
+      alertEl.textContent = t('limitReached', fmtDuration(pace2.timeToFull));
     } else {
       alertEl.classList.add('hidden');
     }
@@ -755,7 +828,7 @@
       }
       if (currentState.lastUpdated) {
         document.getElementById('updatedText').textContent =
-          'Updated ' + timeAgo(currentState.lastUpdated);
+          t('updated', timeAgo(currentState.lastUpdated));
       }
     }, 1000);
   }
@@ -919,6 +992,7 @@
   // ═══════════════════════════════════════════════
   function applySettings(s) {
     currentSettings = s;
+    applyTranslations();
     const showCharts = s?.showChartsTab !== false;
     document.getElementById('chartsTab').classList.toggle('hidden', !showCharts);
     if (!showCharts && activeTab === 'charts') switchTab('usage');
