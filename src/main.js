@@ -54,11 +54,9 @@ let appState = {
 // ══════════════════════════════════════════════
 app.whenReady().then(async () => {
   app.setLoginItemSettings({ openAtLogin: store.get('openAtLogin', false) });
-
   initIconWindow();
   await createTray();
   createPopupWindow();
-
   apiService.init();
   apiService.on('session-found', onSessionFound);
   apiService.on('session-lost', onSessionLost);
