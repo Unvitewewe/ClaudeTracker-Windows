@@ -803,18 +803,26 @@
   };
   Chart.register(crosshairPlugin);
 
-  const CHART_SCALES = {
-    x: {
-      type: 'time',
-      grid: { color: '#2c2c2e' },
-      ticks: { color: '#8e8e93', maxTicksLimit: 6, font: { size: 10 } },
-    },
-    y: {
-      min: 0, max: 100,
-      grid: { color: '#2c2c2e' },
-      ticks: { color: '#8e8e93', font: { size: 10 }, callback: v => v + '%' },
-    },
-  };
+  function getChartScales(rangeHours) {
+    const timeConfig = rangeHours <= 24
+      ? { unit: 'hour',  displayFormats: { hour:  'HH:mm'       } }
+      : rangeHours <= 72
+      ? { unit: 'hour',  displayFormats: { hour:  'EEE HH:mm'   } }
+      : { unit: 'day',   displayFormats: { day:   'MMM d'        } };
+    return {
+      x: {
+        type: 'time',
+        time: timeConfig,
+        grid: { color: '#2c2c2e' },
+        ticks: { color: '#8e8e93', maxTicksLimit: 6, font: { size: 10 } },
+      },
+      y: {
+        min: 0, max: 100,
+        grid: { color: '#2c2c2e' },
+        ticks: { color: '#8e8e93', font: { size: 10 }, callback: v => v + '%' },
+      },
+    };
+  }
 
   function chartTooltipOpts() {
     return {
@@ -854,12 +862,8 @@
       .map(p => ({ x: p.timestamp, y: Math.round(p[key] * 100) }));
 
     if (charts[canvasId]) {
-      const ds = charts[canvasId].data.datasets[0];
-      ds.data = data;
-      ds.borderColor = color;
-      ds.backgroundColor = color + '22';
-      charts[canvasId].update();
-      return;
+      charts[canvasId].destroy();
+      delete charts[canvasId];
     }
 
     const canvas = document.getElementById(canvasId);
@@ -881,7 +885,7 @@
         responsive: true,
         animation: false,
         plugins: { legend: { display: false }, tooltip: chartTooltipOpts() },
-        scales: CHART_SCALES,
+        scales: getChartScales(chartRange),
       },
     });
   }

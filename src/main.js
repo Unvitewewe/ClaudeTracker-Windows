@@ -578,7 +578,7 @@ function getSerializableState() {
     accountInfo:     active?.accountInfo     || null,
     usage:           active?.usage           || null,
     lastUpdated:     active?.lastUpdated     || null,
-    history:         active?.history?.slice(-500) || [],
+    history:         active?.history || [],
   };
 }
 
