@@ -268,10 +268,15 @@ function createPopupWindow() {
   });
   popupWindow.loadFile(path.join(__dirname, 'renderer/popup.html'));
   popupWindow.on('blur', () => {
-    if ((!settingsWindow || settingsWindow.isDestroyed()) &&
-        !Array.from(loginWindows.values()).some(w => w && !w.isDestroyed())) {
-      popupWindow.hide();
-    }
+    // Small delay needed on Windows with alwaysOnTop — without it the window
+    // can immediately regain focus and the hide never fires.
+    setTimeout(() => {
+      if (!popupWindow || popupWindow.isDestroyed()) return;
+      if ((!settingsWindow || settingsWindow.isDestroyed()) &&
+          !Array.from(loginWindows.values()).some(w => w && !w.isDestroyed())) {
+        popupWindow.hide();
+      }
+    }, 150);
   });
 }
 
@@ -406,12 +411,15 @@ async function refreshAccount(accountId) {
   pushStateUpdate();
 
   try {
-    const [account, usage] = await Promise.all([svc.getAccount(), svc.getUsage()]);
+    const [account, usage, orgs] = await Promise.all([svc.getAccount(), svc.getUsage(), svc.getOrganizations()]);
 
-    // Parse plan
-    const membership = account.memberships?.[0];
-    const caps = membership?.organization?.capabilities || [];
-    const slugs = caps.map(c => (c.name || '').toLowerCase());
+    // Parse plan — check account memberships AND org capabilities AND direct org plan fields
+    const membershipCaps = account.memberships?.[0]?.organization?.capabilities || [];
+    const orgCaps        = Array.isArray(orgs) ? (orgs[0]?.capabilities || []) : [];
+    const allCaps        = [...membershipCaps, ...orgCaps];
+    const capSlugs       = allCaps.map(c => (c.name || c.type || '').toLowerCase());
+    const orgPlanSlug    = (orgs?.[0]?.plan_type || orgs?.[0]?.plan || '').toLowerCase();
+    const slugs          = [...capSlugs, orgPlanSlug];
     let plan = 'Unknown';
     if      (slugs.some(s => s.includes('max')))        plan = 'Max';
     else if (slugs.some(s => s.includes('pro')))        plan = 'Pro';
