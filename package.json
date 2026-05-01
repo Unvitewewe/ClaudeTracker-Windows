@@ -1,6 +1,6 @@
 {
   "name": "claude-tracker-windows",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Windows port of ClaudeTracker — monitor Claude AI usage limits from the system tray",
   "main": "src/main.js",
   "scripts": {
