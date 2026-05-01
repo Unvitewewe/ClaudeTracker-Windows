@@ -642,6 +642,7 @@ function getAllSettings() {
     paceAlertSound:         store.get('paceAlertSound',         true),
     openAtLogin:            store.get('openAtLogin',            false),
     autoInstallUpdates:     store.get('autoInstallUpdates',     false),
+    language:               store.get('language',               'en'),
   };
 }
 
