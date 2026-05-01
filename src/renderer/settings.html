@@ -553,9 +553,17 @@
   bind('paceAlertSound', 'paceAlertSound');
 
   document.getElementById('addAccountBtn').addEventListener('click', () => window.claude.addAccount());
-  document.getElementById('testFiveHourBtn').addEventListener('click', () => window.claude.testFiveHourNotification());
-  document.getElementById('testSevenDayBtn').addEventListener('click', () => window.claude.testSevenDayNotification());
-  document.getElementById('testPaceBtn').addEventListener('click', () => window.claude.testPaceNotification());
+  function bindTestBtn(id, fn) {
+    const btn = document.getElementById(id);
+    btn.addEventListener('click', async () => {
+      btn.textContent = '…'; btn.disabled = true;
+      try { await fn(); } catch(e) { console.error(id, e); }
+      setTimeout(() => { btn.textContent = 'Test'; btn.disabled = false; }, 2000);
+    });
+  }
+  bindTestBtn('testFiveHourBtn', () => window.claude.testFiveHourNotification());
+  bindTestBtn('testSevenDayBtn', () => window.claude.testSevenDayNotification());
+  bindTestBtn('testPaceBtn',     () => window.claude.testPaceNotification());
   document.getElementById('checkUpdatesBtn').addEventListener('click', async () => {
     const btn = document.getElementById('checkUpdatesBtn');
     btn.textContent = 'Checking…';

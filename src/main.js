@@ -302,6 +302,7 @@ function openSettings() {
   });
   settingsWindow.loadFile(path.join(__dirname, 'renderer/settings.html'));
   settingsWindow.setMenu(null);
+  // settingsWindow.webContents.openDevTools({ mode: 'detach' });
   settingsWindow.on('closed', () => { settingsWindow = null; });
 }
 
@@ -466,9 +467,7 @@ function checkForReset(accountId, key, prev, curr, label) {
   const durationKey  = isFiveHour ? 'notifyFiveHourDuration' : 'notifySevenDayDuration';
   if (!store.get(enabledKey, true)) return;
   if (prev.utilization > 0.05 && curr.utilization <= 0.05 && prev.resets_at !== curr.resets_at) {
-    const acc = getAccount(accountId);
-    const who = acc?.email ? ` (${acc.email.split('@')[0]})` : '';
-    fireNotification(`${label} Reset${who}`, `Your ${label.toLowerCase()} has reset.`,
+    fireNotification(`${label} Reset${accountTag(accountId)}`, `Your ${label.toLowerCase()} has reset.`,
       store.get(durationKey, 5), store.get(soundKey, true));
   }
 }
@@ -484,24 +483,28 @@ function checkPaceAlert(accountId) {
   const threshold = store.get('paceAlertThreshold', 30) * 60;
   if (pace?.timeToFull != null && pace.timeToFull < threshold && st.usage.five_hour.utilization < 1) {
     lastPaceAlerts.set(accountId, now);
-    const acc = getAccount(accountId);
-    const who = acc?.email ? ` (${acc.email.split('@')[0]})` : '';
-    fireNotification(`Pace Alert${who}`, `Limit in ~${fmtDur(pace.timeToFull)}`,
+    fireNotification(`Pace Alert${accountTag(accountId)}`, `Limit in ~${fmtDur(pace.timeToFull)}`,
       store.get('paceAlertToastDuration', 5), store.get('paceAlertSound', true));
   }
 }
 
+// Returns " (username)" when there are multiple accounts, empty string otherwise
+function accountTag(accountId) {
+  if (accounts.length <= 1) return '';
+  const acc = getAccount(accountId);
+  return acc?.email ? ` (${acc.email.split('@')[0]})` : '';
+}
+
 function fireNotification(title, body, duration, sound) {
   if (!Notification.isSupported()) return;
-  const n = new Notification({
-    title,
-    body,
-    silent: true,                                    // we play sound ourselves
-    timeoutType: duration === 0 ? 'never' : 'default', // Windows Action Center hint
-  });
-  n.show();
-  if (sound) playSound();
-  if (duration > 0) setTimeout(() => { try { n.close(); } catch {} }, duration * 1000);
+  try {
+    const n = new Notification({ title, body, silent: true, timeoutType: duration === 0 ? 'never' : 'default' });
+    n.show();
+    if (sound) playSound();
+    if (duration > 0) setTimeout(() => { try { n.close(); } catch {} }, duration * 1000);
+  } catch(e) {
+    console.error('[notify] error:', e.message);
+  }
 }
 
 function playSound() {
@@ -718,15 +721,15 @@ ipcMain.handle('refresh',       () => refreshAllAccounts());
 ipcMain.handle('quit',          () => app.exit(0));
 
 ipcMain.handle('test-five-hour-notification', () =>
-  fireNotification('5-Hour Window Reset', 'Your 5-hour window has reset — test.',
+  fireNotification(`5-Hour Window Reset${accountTag(activeAccountId)}`, 'Your 5-hour window has reset — test.',
     store.get('notifyFiveHourDuration', 5), store.get('notifyFiveHourSound', true)));
 
 ipcMain.handle('test-seven-day-notification', () =>
-  fireNotification('7-Day Window Reset', 'Your 7-day window has reset — test.',
+  fireNotification(`7-Day Window Reset${accountTag(activeAccountId)}`, 'Your 7-day window has reset — test.',
     store.get('notifySevenDayDuration', 5), store.get('notifySevenDaySound', true)));
 
 ipcMain.handle('test-pace-notification', () =>
-  fireNotification('Pace Alert — 5-Hour Window', 'Limit in ~15m — test.',
+  fireNotification(`Pace Alert${accountTag(activeAccountId)}`, 'Limit in ~15m — test.',
     store.get('paceAlertToastDuration', 5), store.get('paceAlertSound', true)));
 
 ipcMain.handle('check-updates', async () => {
