@@ -311,6 +311,60 @@
 
     /* ── Hidden ── */
     .hidden { display: none !important; }
+
+    /* ── Account bar ── */
+    .account-bar {
+      display: flex;
+      align-items: center;
+      padding: 5px 10px;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+      min-height: 36px;
+    }
+    .account-pills {
+      display: flex;
+      gap: 5px;
+      overflow-x: auto;
+      flex: 1;
+      scrollbar-width: none;
+    }
+    .account-pills::-webkit-scrollbar { display: none; }
+    .account-pill {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: var(--bg2);
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      font-size: 11px;
+      white-space: nowrap;
+      transition: all 0.15s;
+      -webkit-app-region: no-drag;
+    }
+    .account-pill.active {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .account-pill:hover:not(.active) { border-color: var(--bg3); }
+    .acct-label { color: var(--text); }
+    .acct-pct { color: var(--text2); font-variant-numeric: tabular-nums; }
+    .acct-add-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+      -webkit-app-region: no-drag;
+    }
+    .acct-add-btn:hover { border-color: var(--accent); color: var(--accent); }
   </style>
 </head>
 <body>
@@ -325,6 +379,12 @@
     <button class="icon-btn" id="refreshBtn" title="Refresh">↻</button>
     <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
   </div>
+</div>
+
+<!-- Account bar -->
+<div class="account-bar hidden" id="accountBar">
+  <div class="account-pills" id="accountPills"></div>
+  <button class="acct-add-btn" id="addAccountBtn" title="Add account">+</button>
 </div>
 
 <!-- Tabs -->
@@ -524,11 +584,44 @@
   }
 
   // ═══════════════════════════════════════════════
+  // Account bar
+  // ═══════════════════════════════════════════════
+  function renderAccountBar(state) {
+    const bar   = document.getElementById('accountBar');
+    const pills = document.getElementById('accountPills');
+    if (!state?.accounts) { bar.classList.add('hidden'); return; }
+    bar.classList.remove('hidden');
+    pills.innerHTML = '';
+    for (const acc of state.accounts) {
+      const pill = document.createElement('div');
+      pill.className = 'account-pill' + (acc.id === state.activeAccountId ? ' active' : '');
+
+      const labelEl = document.createElement('span');
+      labelEl.className = 'acct-label';
+      labelEl.textContent = acc.email ? acc.email.split('@')[0] : 'Account';
+
+      const pct = acc.isAuthenticated && acc.fiveHourPct != null ? acc.fiveHourPct + '%' : '—';
+      const color = acc.isAuthenticated && acc.fiveHourPct != null
+        ? urgencyColor(acc.fiveHourPct / 100) : 'var(--text2)';
+      const pctEl = document.createElement('span');
+      pctEl.className = 'acct-pct';
+      pctEl.style.color = color;
+      pctEl.textContent = pct;
+
+      pill.append(labelEl, pctEl);
+      pill.addEventListener('click', () => window.claude.switchAccount(acc.id));
+      pills.appendChild(pill);
+    }
+  }
+
+  // ═══════════════════════════════════════════════
   // Render
   // ═══════════════════════════════════════════════
   function renderState(state) {
     currentState = state;
     if (!state) return;
+
+    renderAccountBar(state);
 
     const authenticated = state.isAuthenticated;
     document.getElementById('authPrompt').classList.toggle('hidden', authenticated);
@@ -786,7 +879,10 @@
   // ═══════════════════════════════════════════════
   // IPC wiring
   // ═══════════════════════════════════════════════
-  document.getElementById('signInBtn').addEventListener('click', () => window.claude.signIn());
+  document.getElementById('signInBtn').addEventListener('click', () => {
+    if (currentState?.activeAccountId) window.claude.signInAccount(currentState.activeAccountId);
+  });
+  document.getElementById('addAccountBtn').addEventListener('click', () => window.claude.addAccount());
   document.getElementById('refreshBtn').addEventListener('click', () => window.claude.refresh());
   document.getElementById('settingsBtn').addEventListener('click', () => window.claude.openSettings());
   document.getElementById('footerSettings').addEventListener('click', () => window.claude.openSettings());

@@ -3,12 +3,12 @@
 const { BrowserWindow, session } = require('electron');
 const { EventEmitter } = require('events');
 
-const CLAUDE_SESSION = 'persist:claude-tracker';
 const CLAUDE_URL = 'https://claude.ai';
 
 class ApiService extends EventEmitter {
-  constructor() {
+  constructor(sessionPartition = 'persist:claude-tracker') {
     super();
+    this._partitionName = sessionPartition;
     this._session = null;
     this._window = null;
     this._isReady = false;
@@ -17,8 +17,7 @@ class ApiService extends EventEmitter {
   }
 
   init() {
-    // session API requires app to be ready — initialize here, not in constructor
-    this._session = session.fromPartition(CLAUDE_SESSION);
+    this._session = session.fromPartition(this._partitionName);
 
     this._window = new BrowserWindow({
       show: false,
@@ -31,13 +30,8 @@ class ApiService extends EventEmitter {
       },
     });
 
-    this._window.webContents.on('did-finish-load', () => {
-      this._isReady = true;
-    });
-
-    this._window.webContents.on('did-navigate', () => {
-      this._isReady = false;
-    });
+    this._window.webContents.on('did-finish-load', () => { this._isReady = true; });
+    this._window.webContents.on('did-navigate',    () => { this._isReady = false; });
 
     this._session.cookies.on('changed', (event, cookie, cause, removed) => {
       if (cookie.name === 'sessionKey' && cookie.domain.includes('claude.ai')) {
@@ -55,9 +49,8 @@ class ApiService extends EventEmitter {
     this._window.loadURL(CLAUDE_URL);
   }
 
-  getSession() {
-    return this._session;
-  }
+  getSession() { return this._session; }
+  getPartition() { return this._partitionName; }
 
   async _waitReady(maxWaitMs = 15000) {
     if (this._isReady) return;
@@ -91,30 +84,26 @@ class ApiService extends EventEmitter {
   async checkSession() {
     try {
       const cookies = await this._session.cookies.get({ name: 'sessionKey' });
-      const hasCookie = cookies.some(c => c.domain.includes('claude.ai') || c.domain.includes('anthropic.com'));
-      if (!hasCookie) return false;
+      if (!cookies.some(c => c.domain.includes('claude.ai') || c.domain.includes('anthropic.com'))) {
+        return false;
+      }
       const data = await this._fetch('/api/account');
-      return !!data && !data.__error;
+      return !!data;
     } catch {
       return false;
     }
   }
 
-  async getAccount() {
-    return this._fetch('/api/account');
-  }
-
-  async _resolveOrgId() {
-    if (this._orgId) return this._orgId;
-    const orgs = await this._fetch('/api/organizations');
-    if (!Array.isArray(orgs) || orgs.length === 0) throw new Error('No organizations');
-    this._orgId = orgs[0].uuid;
-    return this._orgId;
-  }
+  async getAccount()      { return this._fetch('/api/account'); }
+  async getOrganizations(){ return this._fetch('/api/organizations'); }
 
   async getUsage() {
-    const orgId = await this._resolveOrgId();
-    return this._fetch(`/api/organizations/${orgId}/usage`);
+    if (!this._orgId) {
+      const orgs = await this.getOrganizations();
+      if (!Array.isArray(orgs) || orgs.length === 0) throw new Error('No organizations');
+      this._orgId = orgs[0].uuid;
+    }
+    return this._fetch(`/api/organizations/${this._orgId}/usage`);
   }
 
   async signOut() {
@@ -126,8 +115,10 @@ class ApiService extends EventEmitter {
     this._window.loadURL(CLAUDE_URL);
   }
 
-  clearOrgCache() {
-    this._orgId = null;
+  clearOrgCache() { this._orgId = null; }
+
+  destroy() {
+    if (this._window && !this._window.isDestroyed()) this._window.destroy();
   }
 }
 

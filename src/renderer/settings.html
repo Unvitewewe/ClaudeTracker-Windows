@@ -156,22 +156,16 @@
 
 <div class="scroll">
 
-  <!-- Account -->
+  <!-- Accounts -->
   <div class="section">
-    <div class="section-title">Account</div>
-    <div class="card">
-      <!-- Signed in -->
-      <div class="row" id="accountRow" style="display:none">
-        <div class="row-label">
-          <div class="account-name" id="acctName">—<span class="plan-pill hidden" id="acctPlan"></span></div>
-          <div class="account-info" id="acctEmail">—</div>
-        </div>
-        <button class="btn danger" id="signOutBtn">Sign Out</button>
-      </div>
-      <!-- Signed out -->
-      <div class="row" id="signInRow">
-        <div class="row-label"><div class="title">Not signed in</div></div>
-        <button class="btn primary" id="signInBtn">Sign In</button>
+    <div class="section-title">Accounts</div>
+    <div class="card" id="accountsCard">
+      <!-- dynamically rendered per-account rows -->
+    </div>
+    <div class="card" style="margin-top:8px">
+      <div class="row">
+        <div class="row-label"><div class="title">Add Account</div></div>
+        <button class="btn primary" id="addAccountBtn">+ Add</button>
       </div>
       <div class="row">
         <div class="row-label"><div class="title">Check for updates</div></div>
@@ -391,17 +385,66 @@
   }
 
   function updateAccountUI(state) {
-    if (!state) return;
-    const signedIn = state.isAuthenticated;
-    document.getElementById('accountRow').style.display = signedIn ? '' : 'none';
-    document.getElementById('signInRow').style.display = signedIn ? 'none' : '';
-    if (signedIn && state.accountInfo) {
-      document.getElementById('acctName').childNodes[0].textContent = state.accountInfo.fullName || '';
-      document.getElementById('acctEmail').textContent = state.accountInfo.emailAddress || '';
-      const plan = state.accountInfo.plan;
-      const pill = document.getElementById('acctPlan');
-      if (plan && plan !== 'Unknown') { pill.textContent = plan; pill.classList.remove('hidden'); }
-      else pill.classList.add('hidden');
+    if (!state?.accounts) return;
+    const card = document.getElementById('accountsCard');
+    card.innerHTML = '';
+    const total = state.accounts.length;
+    for (const acc of state.accounts) {
+      const row = document.createElement('div');
+      row.className = 'row';
+
+      const lbl = document.createElement('div');
+      lbl.className = 'row-label';
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'account-name';
+      nameEl.textContent = acc.name || acc.email || 'Account';
+      if (acc.plan && acc.plan !== 'Unknown') {
+        const pill = document.createElement('span');
+        pill.className = 'plan-pill';
+        pill.textContent = acc.plan;
+        nameEl.appendChild(pill);
+      }
+
+      const infoEl = document.createElement('div');
+      infoEl.className = 'account-info';
+      infoEl.textContent = acc.isAuthenticated ? (acc.email || 'Signed in') : 'Not signed in';
+
+      lbl.append(nameEl, infoEl);
+
+      const btns = document.createElement('div');
+      btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0';
+
+      if (acc.isAuthenticated) {
+        const b = document.createElement('button');
+        b.className = 'btn danger';
+        b.textContent = 'Sign Out';
+        b.addEventListener('click', () => window.claude.signOutAccount(acc.id));
+        btns.appendChild(b);
+      } else {
+        const b = document.createElement('button');
+        b.className = 'btn primary';
+        b.textContent = 'Sign In';
+        b.addEventListener('click', () => window.claude.signInAccount(acc.id));
+        btns.appendChild(b);
+      }
+
+      if (total > 1) {
+        const rm = document.createElement('button');
+        rm.className = 'btn danger';
+        rm.textContent = '×';
+        rm.style.padding = '6px 10px';
+        rm.title = 'Remove account';
+        rm.addEventListener('click', () => {
+          if (window.confirm('Remove ' + (acc.email || 'this account') + '?')) {
+            window.claude.removeAccount(acc.id);
+          }
+        });
+        btns.appendChild(rm);
+      }
+
+      row.append(lbl, btns);
+      card.appendChild(row);
     }
   }
 
@@ -444,8 +487,7 @@
   bind('paceAlertToastDuration', 'paceAlertToastDuration');
   bind('paceAlertSound', 'paceAlertSound');
 
-  document.getElementById('signOutBtn').addEventListener('click', () => window.claude.signOut());
-  document.getElementById('signInBtn').addEventListener('click', () => window.claude.signIn());
+  document.getElementById('addAccountBtn').addEventListener('click', () => window.claude.addAccount());
   document.getElementById('testResetBtn').addEventListener('click', () => window.claude.testResetNotification());
   document.getElementById('testPaceBtn').addEventListener('click', () => window.claude.testPaceNotification());
   document.getElementById('checkUpdatesBtn').addEventListener('click', async () => {
