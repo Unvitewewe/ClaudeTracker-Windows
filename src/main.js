@@ -4,11 +4,15 @@ const {
   app, BrowserWindow, Tray, Menu, nativeImage,
   ipcMain, screen, shell, Notification, crypto: electronCrypto,
 } = require('electron');
-const path    = require('path');
-const https   = require('https');
-const crypto  = require('crypto');
-const ApiService = require('./api-service');
-const store      = require('./store');
+const path          = require('path');
+const https         = require('https');
+const crypto        = require('crypto');
+const { exec }      = require('child_process');
+const ApiService    = require('./api-service');
+const store         = require('./store');
+
+// Required on Windows for toast notifications to appear in the Action Center
+app.setAppUserModelId('com.unvitewewe.claude-tracker');
 
 // Single instance guard
 if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
@@ -489,9 +493,20 @@ function checkPaceAlert(accountId) {
 
 function fireNotification(title, body, duration, sound) {
   if (!Notification.isSupported()) return;
-  const n = new Notification({ title, body, silent: !sound });
+  const n = new Notification({
+    title,
+    body,
+    silent: true,                                    // we play sound ourselves
+    timeoutType: duration === 0 ? 'never' : 'default', // Windows Action Center hint
+  });
   n.show();
-  if (duration > 0) setTimeout(() => n.close(), duration * 1000);
+  if (sound) playSound();
+  if (duration > 0) setTimeout(() => { try { n.close(); } catch {} }, duration * 1000);
+}
+
+function playSound() {
+  // Play Windows system notification sound via PowerShell (reliable cross-version)
+  exec('powershell -NoProfile -Command "[System.Media.SystemSounds]::Asterisk.Play()"');
 }
 
 function computePaceNode(history, key) {
