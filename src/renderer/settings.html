@@ -235,19 +235,47 @@
     </div>
   </div>
 
-  <!-- Reset notifications -->
+  <!-- 5-Hour Reset Notification -->
   <div class="section">
-    <div class="section-title">Window Reset Notifications</div>
+    <div class="section-title">5-Hour Window Reset</div>
     <div class="card">
       <div class="row">
-        <div class="row-label"><div class="title">5-Hour window reset</div></div>
+        <div class="row-label"><div class="title">Enabled</div></div>
         <label class="toggle">
           <input type="checkbox" id="notifyFiveHourReset">
           <div class="toggle-track"></div><div class="toggle-thumb"></div>
         </label>
       </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label">
+            <div class="title">Duration</div>
+            <div class="sub">0 = persistent until dismissed</div>
+          </div>
+          <span class="slider-value" id="fiveHourDurationVal">5s</span>
+        </div>
+        <input type="range" id="notifyFiveHourDuration" min="0" max="30" step="1" value="5">
+      </div>
       <div class="row">
-        <div class="row-label"><div class="title">7-Day window reset</div></div>
+        <div class="row-label"><div class="title">Sound</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="notifyFiveHourSound">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Test</div></div>
+        <button class="btn" id="testFiveHourBtn">Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7-Day Reset Notification -->
+  <div class="section">
+    <div class="section-title">7-Day Window Reset</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-label"><div class="title">Enabled</div></div>
         <label class="toggle">
           <input type="checkbox" id="notifySevenDayReset">
           <div class="toggle-track"></div><div class="toggle-thumb"></div>
@@ -256,23 +284,23 @@
       <div class="row slider-row">
         <div class="slider-header">
           <div class="row-label">
-            <div class="title">Notification duration</div>
+            <div class="title">Duration</div>
             <div class="sub">0 = persistent until dismissed</div>
           </div>
-          <span class="slider-value" id="notifyDurationVal">5s</span>
+          <span class="slider-value" id="sevenDayDurationVal">5s</span>
         </div>
-        <input type="range" id="notifyToastDuration" min="0" max="30" step="1" value="5">
+        <input type="range" id="notifySevenDayDuration" min="0" max="30" step="1" value="5">
       </div>
       <div class="row">
         <div class="row-label"><div class="title">Sound</div></div>
         <label class="toggle">
-          <input type="checkbox" id="notifySound">
+          <input type="checkbox" id="notifySevenDaySound">
           <div class="toggle-track"></div><div class="toggle-thumb"></div>
         </label>
       </div>
       <div class="row">
-        <div class="row-label"><div class="title">Test notification</div></div>
-        <button class="btn" id="testResetBtn">Test</button>
+        <div class="row-label"><div class="title">Test</div></div>
+        <button class="btn" id="testSevenDayBtn">Test</button>
       </div>
     </div>
   </div>
@@ -318,6 +346,30 @@
       <div class="row">
         <div class="row-label"><div class="title">Test pace alert</div></div>
         <button class="btn" id="testPaceBtn">Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- System -->
+  <div class="section">
+    <div class="section-title">System</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-label"><div class="title">Open at login</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="openAtLogin">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row">
+        <div class="row-label">
+          <div class="title">Auto-install updates</div>
+          <div class="sub">Check for updates on launch and open download page</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="autoInstallUpdates">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
       </div>
     </div>
   </div>
@@ -369,11 +421,17 @@
     document.getElementById('refreshVal').textContent = (s.refreshInterval || 30) + 's';
 
     setCheck('notifyFiveHourReset', s.notifyFiveHourReset !== false);
+    setRange('notifyFiveHourDuration', s.notifyFiveHourDuration ?? 5);
+    document.getElementById('fiveHourDurationVal').textContent =
+      (s.notifyFiveHourDuration ?? 5) === 0 ? '∞' : (s.notifyFiveHourDuration ?? 5) + 's';
+    setCheck('notifyFiveHourSound', s.notifyFiveHourSound !== false);
     setCheck('notifySevenDayReset', s.notifySevenDayReset !== false);
-    setRange('notifyToastDuration', s.notifyToastDuration ?? 5);
-    document.getElementById('notifyDurationVal').textContent =
-      (s.notifyToastDuration ?? 5) === 0 ? '∞' : (s.notifyToastDuration ?? 5) + 's';
-    setCheck('notifySound', s.notifySound !== false);
+    setRange('notifySevenDayDuration', s.notifySevenDayDuration ?? 5);
+    document.getElementById('sevenDayDurationVal').textContent =
+      (s.notifySevenDayDuration ?? 5) === 0 ? '∞' : (s.notifySevenDayDuration ?? 5) + 's';
+    setCheck('notifySevenDaySound', s.notifySevenDaySound !== false);
+    setCheck('openAtLogin', !!s.openAtLogin);
+    setCheck('autoInstallUpdates', !!s.autoInstallUpdates);
 
     setCheck('paceAlertEnabled', s.paceAlertEnabled !== false);
     setRange('paceAlertThreshold', s.paceAlertThreshold || 30);
@@ -458,8 +516,11 @@
   document.getElementById('refreshInterval').addEventListener('input', e => {
     document.getElementById('refreshVal').textContent = e.target.value + 's';
   });
-  document.getElementById('notifyToastDuration').addEventListener('input', e => {
-    document.getElementById('notifyDurationVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's';
+  document.getElementById('notifyFiveHourDuration').addEventListener('input', e => {
+    document.getElementById('fiveHourDurationVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's';
+  });
+  document.getElementById('notifySevenDayDuration').addEventListener('input', e => {
+    document.getElementById('sevenDayDurationVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's';
   });
   document.getElementById('paceAlertThreshold').addEventListener('input', e => {
     document.getElementById('paceThresholdVal').textContent = e.target.value + 'm';
@@ -479,16 +540,21 @@
   bind('paceRateWindow', 'paceRateWindow');
   bind('refreshInterval', 'refreshInterval');
   bind('notifyFiveHourReset', 'notifyFiveHourReset');
+  bind('notifyFiveHourDuration', 'notifyFiveHourDuration');
+  bind('notifyFiveHourSound', 'notifyFiveHourSound');
   bind('notifySevenDayReset', 'notifySevenDayReset');
-  bind('notifyToastDuration', 'notifyToastDuration');
-  bind('notifySound', 'notifySound');
+  bind('notifySevenDayDuration', 'notifySevenDayDuration');
+  bind('notifySevenDaySound', 'notifySevenDaySound');
+  bind('openAtLogin', 'openAtLogin');
+  bind('autoInstallUpdates', 'autoInstallUpdates');
   bind('paceAlertEnabled', 'paceAlertEnabled');
   bind('paceAlertThreshold', 'paceAlertThreshold');
   bind('paceAlertToastDuration', 'paceAlertToastDuration');
   bind('paceAlertSound', 'paceAlertSound');
 
   document.getElementById('addAccountBtn').addEventListener('click', () => window.claude.addAccount());
-  document.getElementById('testResetBtn').addEventListener('click', () => window.claude.testResetNotification());
+  document.getElementById('testFiveHourBtn').addEventListener('click', () => window.claude.testFiveHourNotification());
+  document.getElementById('testSevenDayBtn').addEventListener('click', () => window.claude.testSevenDayNotification());
   document.getElementById('testPaceBtn').addEventListener('click', () => window.claude.testPaceNotification());
   document.getElementById('checkUpdatesBtn').addEventListener('click', async () => {
     const btn = document.getElementById('checkUpdatesBtn');

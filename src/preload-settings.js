@@ -13,8 +13,9 @@ contextBridge.exposeInMainWorld('claude', {
   signOutAccount: (id)   => ipcRenderer.invoke('sign-out-account', id),
   signInAccount:  (id)   => ipcRenderer.invoke('sign-in-account', id),
 
-  testResetNotification: () => ipcRenderer.invoke('test-reset-notification'),
-  testPaceNotification:  () => ipcRenderer.invoke('test-pace-notification'),
+  testFiveHourNotification: () => ipcRenderer.invoke('test-five-hour-notification'),
+  testSevenDayNotification: () => ipcRenderer.invoke('test-seven-day-notification'),
+  testPaceNotification:     () => ipcRenderer.invoke('test-pace-notification'),
   checkUpdates:          () => ipcRenderer.invoke('check-updates'),
 
   onSettingsUpdate: (cb) => { ipcRenderer.on('settings-update', (_e, s) => cb(s)); },

@@ -132,6 +132,10 @@ app.whenReady().then(async () => {
   pushStateUpdate();
   startPolling();
   startHistoryCollection();
+
+  if (store.get('autoInstallUpdates', false)) {
+    checkUpdates().then(r => { if (r.hasUpdate && r.url) shell.openExternal(r.url); }).catch(() => {});
+  }
 });
 
 app.on('second-instance', () => {
@@ -452,13 +456,16 @@ async function refreshAccount(accountId) {
 // ══════════════════════════════════════════════
 function checkForReset(accountId, key, prev, curr, label) {
   if (!prev || !curr) return;
-  const settingKey = key === 'five_hour' ? 'notifyFiveHourReset' : 'notifySevenDayReset';
-  if (!store.get(settingKey, true)) return;
+  const isFiveHour   = key === 'five_hour';
+  const enabledKey   = isFiveHour ? 'notifyFiveHourReset'    : 'notifySevenDayReset';
+  const soundKey     = isFiveHour ? 'notifyFiveHourSound'    : 'notifySevenDaySound';
+  const durationKey  = isFiveHour ? 'notifyFiveHourDuration' : 'notifySevenDayDuration';
+  if (!store.get(enabledKey, true)) return;
   if (prev.utilization > 0.05 && curr.utilization <= 0.05 && prev.resets_at !== curr.resets_at) {
     const acc = getAccount(accountId);
     const who = acc?.email ? ` (${acc.email.split('@')[0]})` : '';
     fireNotification(`${label} Reset${who}`, `Your ${label.toLowerCase()} has reset.`,
-      store.get('notifyToastDuration', 5), store.get('notifySound', true));
+      store.get(durationKey, 5), store.get(soundKey, true));
   }
 }
 
@@ -606,14 +613,17 @@ function getAllSettings() {
     showPaceIndicator:      store.get('showPaceIndicator',      true),
     paceRateWindow:         store.get('paceRateWindow',         300),
     notifyFiveHourReset:    store.get('notifyFiveHourReset',    true),
+    notifyFiveHourSound:    store.get('notifyFiveHourSound',    true),
+    notifyFiveHourDuration: store.get('notifyFiveHourDuration', 5),
     notifySevenDayReset:    store.get('notifySevenDayReset',    true),
-    notifyToastDuration:    store.get('notifyToastDuration',    5),
-    notifySound:            store.get('notifySound',            true),
+    notifySevenDaySound:    store.get('notifySevenDaySound',    true),
+    notifySevenDayDuration: store.get('notifySevenDayDuration', 5),
     paceAlertEnabled:       store.get('paceAlertEnabled',       true),
     paceAlertThreshold:     store.get('paceAlertThreshold',     30),
     paceAlertToastDuration: store.get('paceAlertToastDuration', 5),
     paceAlertSound:         store.get('paceAlertSound',         true),
     openAtLogin:            store.get('openAtLogin',            false),
+    autoInstallUpdates:     store.get('autoInstallUpdates',     false),
   };
 }
 
@@ -692,9 +702,13 @@ ipcMain.handle('open-settings', () => openSettings());
 ipcMain.handle('refresh',       () => refreshAllAccounts());
 ipcMain.handle('quit',          () => app.exit(0));
 
-ipcMain.handle('test-reset-notification', () =>
+ipcMain.handle('test-five-hour-notification', () =>
   fireNotification('5-Hour Window Reset', 'Your 5-hour window has reset — test.',
-    store.get('notifyToastDuration', 5), store.get('notifySound', true)));
+    store.get('notifyFiveHourDuration', 5), store.get('notifyFiveHourSound', true)));
+
+ipcMain.handle('test-seven-day-notification', () =>
+  fireNotification('7-Day Window Reset', 'Your 7-day window has reset — test.',
+    store.get('notifySevenDayDuration', 5), store.get('notifySevenDaySound', true)));
 
 ipcMain.handle('test-pace-notification', () =>
   fireNotification('Pace Alert — 5-Hour Window', 'Limit in ~15m — test.',

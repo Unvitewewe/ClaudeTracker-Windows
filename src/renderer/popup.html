@@ -762,44 +762,89 @@
   // ═══════════════════════════════════════════════
   // Charts
   // ═══════════════════════════════════════════════
-  const CHART_OPTS = {
-    responsive: true,
-    animation: false,
-    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
-    scales: {
-      x: {
-        type: 'time',
-        time: { tooltipFormat: 'MMM d, HH:mm' },
-        grid: { color: '#2c2c2e' },
-        ticks: { color: '#8e8e93', maxTicksLimit: 6, font: { size: 10 } },
-      },
-      y: {
-        min: 0,
-        max: 100,
-        grid: { color: '#2c2c2e' },
-        ticks: {
-          color: '#8e8e93',
-          font: { size: 10 },
-          callback: v => v + '%'
-        }
+
+  // Shared crosshair plugin — draws a vertical dashed line and syncs across all charts
+  const crosshairPlugin = {
+    id: 'crosshair',
+    afterDraw(chart) {
+      if (chart._crosshairIdx == null) return;
+      const meta = chart.getDatasetMeta(0);
+      const pt   = meta.data[chart._crosshairIdx];
+      if (!pt) return;
+      const { ctx } = chart;
+      const yAxis = chart.scales.y;
+      ctx.save();
+      ctx.beginPath();
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(142,142,147,0.5)';
+      ctx.lineWidth = 1;
+      ctx.moveTo(pt.x, yAxis.top);
+      ctx.lineTo(pt.x, yAxis.bottom);
+      ctx.stroke();
+      ctx.restore();
+    },
+    afterEvent(chart, args) {
+      const { event } = args;
+      if (event.type === 'mouseout') {
+        chart._crosshairIdx = null;
+        args.changed = true;
+        Object.values(charts).forEach(c => { if (c !== chart) { c._crosshairIdx = null; c.update('none'); } });
+        return;
       }
-    }
+      const els = chart.getElementsAtEventForMode(event.native, 'index', { intersect: false }, false);
+      if (!els.length) return;
+      const idx = els[0].index;
+      if (chart._crosshairIdx === idx) return;
+      chart._crosshairIdx = idx;
+      args.changed = true;
+      Object.values(charts).forEach(c => { if (c !== chart) { c._crosshairIdx = idx; c.update('none'); } });
+    },
   };
+  Chart.register(crosshairPlugin);
+
+  const CHART_SCALES = {
+    x: {
+      type: 'time',
+      grid: { color: '#2c2c2e' },
+      ticks: { color: '#8e8e93', maxTicksLimit: 6, font: { size: 10 } },
+    },
+    y: {
+      min: 0, max: 100,
+      grid: { color: '#2c2c2e' },
+      ticks: { color: '#8e8e93', font: { size: 10 }, callback: v => v + '%' },
+    },
+  };
+
+  function chartTooltipOpts() {
+    return {
+      mode: 'index',
+      intersect: false,
+      callbacks: {
+        title: ctx => {
+          if (!ctx.length) return '';
+          return new Date(ctx[0].parsed.x).toLocaleString([], {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+          });
+        },
+        label: ctx => ctx.parsed.y + '%',
+      },
+    };
+  }
 
   function renderCharts() {
     if (!currentState) return;
     const history = currentState.history || [];
-    const cutoff = Date.now() - chartRange * 3600 * 1000;
-    const pts = history.filter(p => p.timestamp >= cutoff);
+    const cutoff  = Date.now() - chartRange * 3600 * 1000;
+    const pts     = history.filter(p => p.timestamp >= cutoff);
 
-    if (pts.length < 2) {
-      document.getElementById('noHistory').classList.remove('hidden');
-    } else {
-      document.getElementById('noHistory').classList.add('hidden');
-    }
+    document.getElementById('noHistory').classList.toggle('hidden', pts.length >= 2);
 
-    renderChart('chart5hr', pts, 'fiveHour', '#c084fc');
-    renderChart('chart7day', pts, 'sevenDay', '#34c759');
+    const usage  = currentState.usage;
+    const color5 = usage?.five_hour ? urgencyColor(usage.five_hour.utilization) : '#c084fc';
+    const color7 = usage?.seven_day ? urgencyColor(usage.seven_day.utilization) : '#34c759';
+
+    renderChart('chart5hr',  pts, 'fiveHour', color5);
+    renderChart('chart7day', pts, 'sevenDay', color7);
   }
 
   function renderChart(canvasId, pts, key, color) {
@@ -808,7 +853,10 @@
       .map(p => ({ x: p.timestamp, y: Math.round(p[key] * 100) }));
 
     if (charts[canvasId]) {
-      charts[canvasId].data.datasets[0].data = data;
+      const ds = charts[canvasId].data.datasets[0];
+      ds.data = data;
+      ds.borderColor = color;
+      ds.backgroundColor = color + '22';
       charts[canvasId].update();
       return;
     }
@@ -826,18 +874,14 @@
           pointRadius: 0,
           fill: true,
           tension: 0.3,
-        }]
+        }],
       },
       options: {
-        ...JSON.parse(JSON.stringify(CHART_OPTS)),
-        plugins: {
-          ...CHART_OPTS.plugins,
-          tooltip: {
-            ...CHART_OPTS.plugins.tooltip,
-            callbacks: { label: ctx => ctx.parsed.y + '%' }
-          }
-        }
-      }
+        responsive: true,
+        animation: false,
+        plugins: { legend: { display: false }, tooltip: chartTooltipOpts() },
+        scales: CHART_SCALES,
+      },
     });
   }
 
