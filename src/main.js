@@ -22,8 +22,6 @@ if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
 // ══════════════════════════════════════════════
 const POPUP_BASE_W  = 390;
 const POPUP_BASE_H  = 560;   // slightly taller to fit account bar
-const SETTINGS_W    = 420;
-const SETTINGS_H    = 720;
 const HISTORY_MAX   = 2016;
 const HISTORY_INT   = 5 * 60 * 1000;
 const LEGACY_PART   = 'persist:claude-tracker'; // original single-account partition
@@ -44,7 +42,6 @@ const lastPaceAlerts = new Map();// accountId -> timestamp
 let tray          = null;
 let popupWindow   = null;
 let loginWindows  = new Map(); // accountId -> BrowserWindow
-let settingsWindow = null;
 let iconWindow    = null;
 let pollingTimer  = null;
 let historyTimer  = null;
@@ -159,7 +156,7 @@ async function createTray() {
   tray.on('right-click', () => {
     tray.popUpContextMenu(Menu.buildFromTemplate([
       { label: 'Open',     click: showPopup },
-      { label: 'Settings', click: openSettings },
+      { label: 'Settings', click: showSettings },
       { type: 'separator' },
       { label: 'Quit Claude Tracker', click: () => app.exit(0) },
     ]));
@@ -272,8 +269,7 @@ function createPopupWindow() {
     // can immediately regain focus and the hide never fires.
     setTimeout(() => {
       if (!popupWindow || popupWindow.isDestroyed()) return;
-      if ((!settingsWindow || settingsWindow.isDestroyed()) &&
-          !Array.from(loginWindows.values()).some(w => w && !w.isDestroyed())) {
+      if (!Array.from(loginWindows.values()).some(w => w && !w.isDestroyed())) {
         popupWindow.hide();
       }
     }, 150);
@@ -298,17 +294,11 @@ function showPopup()   { if (!popupWindow || popupWindow.isDestroyed()) createPo
 function hidePopup()   { if (popupWindow && !popupWindow.isDestroyed()) popupWindow.hide(); }
 function togglePopup() { popupWindow && popupWindow.isVisible() ? hidePopup() : showPopup(); }
 
-function openSettings() {
-  if (settingsWindow && !settingsWindow.isDestroyed()) { settingsWindow.focus(); return; }
-  settingsWindow = new BrowserWindow({
-    width: SETTINGS_W, height: SETTINGS_H,
-    title: 'Claude Tracker – Settings', resizable: false, skipTaskbar: false,
-    webPreferences: { preload: path.join(__dirname, 'preload-settings.js'), nodeIntegration: false, contextIsolation: true },
-  });
-  settingsWindow.loadFile(path.join(__dirname, 'renderer/settings.html'));
-  settingsWindow.setMenu(null);
-  // settingsWindow.webContents.openDevTools({ mode: 'detach' });
-  settingsWindow.on('closed', () => { settingsWindow = null; });
+function showSettings() {
+  showPopup();
+  if (popupWindow && !popupWindow.isDestroyed()) {
+    popupWindow.webContents.send('show-settings');
+  }
 }
 
 function openLoginForAccount(accountId) {
@@ -592,8 +582,7 @@ function getSerializableState() {
 
 function pushStateUpdate() {
   const state = getSerializableState();
-  if (popupWindow    && !popupWindow.isDestroyed())    popupWindow.webContents.send('state-update', state);
-  if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.webContents.send('state-update', state);
+  if (popupWindow && !popupWindow.isDestroyed()) popupWindow.webContents.send('state-update', state);
 }
 
 // ══════════════════════════════════════════════
@@ -670,8 +659,8 @@ ipcMain.handle('set-setting', (e, key, value) => {
     popupWindow.setSize(Math.round(POPUP_BASE_W * s), Math.round(POPUP_BASE_H * s));
     popupWindow.webContents.setZoomFactor(s);
   }
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    settingsWindow.webContents.send('settings-update', getAllSettings());
+  if (popupWindow && !popupWindow.isDestroyed()) {
+    popupWindow.webContents.send('settings-update', getAllSettings());
   }
 });
 
@@ -725,7 +714,7 @@ ipcMain.handle('sign-in-account', (e, accountId) => {
   openLoginForAccount(accountId);
 });
 
-ipcMain.handle('open-settings', () => openSettings());
+ipcMain.handle('open-settings', () => showSettings());
 ipcMain.handle('refresh',       () => refreshAllAccounts());
 ipcMain.handle('quit',          () => app.exit(0));
 

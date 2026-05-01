@@ -8,7 +8,12 @@ contextBridge.exposeInMainWorld('claude', {
   setSetting:     (k, v)      => ipcRenderer.invoke('set-setting', k, v),
   refresh:        ()          => ipcRenderer.invoke('refresh'),
   quit:           ()          => ipcRenderer.invoke('quit'),
-  openSettings:   ()          => ipcRenderer.invoke('open-settings'),
+  checkUpdates:   ()          => ipcRenderer.invoke('check-updates'),
+
+  // Notifications test
+  testFiveHourNotification: () => ipcRenderer.invoke('test-five-hour-notification'),
+  testSevenDayNotification: () => ipcRenderer.invoke('test-seven-day-notification'),
+  testPaceNotification:     () => ipcRenderer.invoke('test-pace-notification'),
 
   // Multi-account
   addAccount:     ()          => ipcRenderer.invoke('add-account'),
@@ -17,5 +22,7 @@ contextBridge.exposeInMainWorld('claude', {
   signOutAccount: (id)        => ipcRenderer.invoke('sign-out-account', id),
   signInAccount:  (id)        => ipcRenderer.invoke('sign-in-account', id),
 
-  onStateUpdate: (cb) => { ipcRenderer.on('state-update', (_e, s) => cb(s)); },
+  onStateUpdate:    (cb) => { ipcRenderer.on('state-update',    (_e, s) => cb(s)); },
+  onSettingsUpdate: (cb) => { ipcRenderer.on('settings-update', (_e, s) => cb(s)); },
+  onShowSettings:   (cb) => { ipcRenderer.on('show-settings',   ()      => cb());  },
 });

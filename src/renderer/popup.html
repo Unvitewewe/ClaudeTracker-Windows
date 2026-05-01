@@ -8,84 +8,80 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <style>
     :root {
-      --bg: #1c1c1e;
-      --bg2: #2c2c2e;
-      --bg3: #3a3a3c;
-      --text: #f2f2f7;
-      --text2: #8e8e93;
-      --accent: #c084fc;
-      --accent-dim: #7c3aed44;
-      --green: #34c759;
-      --yellow: #ffd60a;
-      --orange: #ff9f0a;
-      --red: #ff453a;
-      --radius: 10px;
-      --border: #3a3a3c;
+      --bg: #1c1c1e; --bg2: #2c2c2e; --bg3: #3a3a3c;
+      --text: #f2f2f7; --text2: #8e8e93; --accent: #c084fc;
+      --accent-dim: #7c3aed44; --green: #34c759; --yellow: #ffd60a;
+      --orange: #ff9f0a; --red: #ff453a; --radius: 10px; --border: #3a3a3c;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100%; height: 100%; overflow: hidden; }
     body {
       font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      font-size: 13px;
-      display: flex;
-      flex-direction: column;
-      user-select: none;
+      background: var(--bg); color: var(--text); font-size: 13px;
+      display: flex; flex-direction: column; user-select: none;
     }
 
     /* ── Header ── */
     .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px 8px;
-      border-bottom: 1px solid var(--border);
-      -webkit-app-region: drag;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px 8px; border-bottom: 1px solid var(--border);
+      -webkit-app-region: drag; flex-shrink: 0;
     }
     .header-left { display: flex; align-items: center; gap: 8px; }
     .header h1 { font-size: 15px; font-weight: 600; }
     .plan-badge {
-      background: var(--accent-dim);
-      color: var(--accent);
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 20px;
-      letter-spacing: 0.3px;
+      background: var(--accent-dim); color: var(--accent);
+      font-size: 10px; font-weight: 600; padding: 2px 7px;
+      border-radius: 20px; letter-spacing: 0.3px;
     }
     .header-right { display: flex; gap: 4px; -webkit-app-region: no-drag; }
     .plan-header { font-size: 11px; color: var(--text2); padding: 2px 0 6px; }
     .plan-header strong { color: var(--accent); font-weight: 600; }
     .icon-btn {
-      background: none;
-      border: none;
-      color: var(--text2);
-      cursor: pointer;
-      padding: 4px 6px;
-      border-radius: 6px;
-      font-size: 14px;
-      transition: background 0.15s, color 0.15s;
+      background: none; border: none; color: var(--text2);
+      cursor: pointer; padding: 4px 6px; border-radius: 6px;
+      font-size: 14px; transition: background 0.15s, color 0.15s;
+      -webkit-app-region: no-drag;
     }
     .icon-btn:hover { background: var(--bg3); color: var(--text); }
 
+    /* ── Main content wrapper ── */
+    #mainContent { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ── Account bar ── */
+    .account-bar {
+      display: flex; align-items: center; padding: 5px 10px;
+      gap: 6px; border-bottom: 1px solid var(--border); min-height: 36px; flex-shrink: 0;
+    }
+    .account-pills { display: flex; gap: 5px; overflow-x: auto; flex: 1; scrollbar-width: none; }
+    .account-pills::-webkit-scrollbar { display: none; }
+    .account-pill {
+      display: flex; align-items: center; gap: 4px; padding: 3px 8px;
+      border-radius: 20px; background: var(--bg2); border: 1.5px solid transparent;
+      cursor: pointer; font-size: 11px; white-space: nowrap;
+      transition: all 0.15s; -webkit-app-region: no-drag;
+    }
+    .account-pill.active { border-color: var(--accent); background: var(--accent-dim); }
+    .account-pill:hover:not(.active) { border-color: var(--bg3); }
+    .acct-label { color: var(--text); }
+    .acct-pct { color: var(--text2); font-variant-numeric: tabular-nums; }
+    .acct-add-btn {
+      background: none; border: 1px solid var(--border); color: var(--text2);
+      width: 22px; height: 22px; border-radius: 50%; font-size: 15px; line-height: 1;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.15s; -webkit-app-region: no-drag;
+    }
+    .acct-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
     /* ── Tabs ── */
     .tabs {
-      display: flex;
-      padding: 8px 16px 0;
-      gap: 0;
-      border-bottom: 1px solid var(--border);
+      display: flex; padding: 8px 16px 0; gap: 0;
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
     }
     .tab {
-      background: none;
-      border: none;
-      color: var(--text2);
-      cursor: pointer;
-      padding: 6px 14px;
-      font-size: 13px;
-      font-weight: 500;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -1px;
+      background: none; border: none; color: var(--text2); cursor: pointer;
+      padding: 6px 14px; font-size: 13px; font-weight: 500;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
       transition: color 0.15s, border-color 0.15s;
     }
     .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
@@ -100,112 +96,41 @@
 
     /* ── Auth state ── */
     .auth-prompt {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 40px 20px;
-      text-align: center;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 12px; padding: 40px 20px; text-align: center;
     }
     .auth-prompt .emoji { font-size: 36px; }
     .auth-prompt p { color: var(--text2); font-size: 13px; line-height: 1.5; }
     .btn-primary {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 9px 20px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.15s;
+      background: var(--accent); color: white; border: none;
+      padding: 9px 20px; border-radius: 8px; font-size: 13px;
+      font-weight: 600; cursor: pointer; transition: opacity 0.15s;
     }
     .btn-primary:hover { opacity: 0.85; }
 
     /* ── Loading ── */
     .loading-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 0 10px;
-      color: var(--text2);
-      font-size: 12px;
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 0 10px; color: var(--text2); font-size: 12px;
     }
     .spinner {
-      width: 14px; height: 14px;
-      border: 2px solid var(--bg3);
-      border-top-color: var(--accent);
-      border-radius: 50%;
+      width: 14px; height: 14px; border: 2px solid var(--bg3);
+      border-top-color: var(--accent); border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── Window card ── */
-    .window-card {
-      background: var(--bg2);
-      border-radius: var(--radius);
-      padding: 14px;
-      margin-bottom: 10px;
-    }
-    .window-header {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .window-label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: var(--text2);
-    }
-    .window-pct {
-      font-size: 28px;
-      font-weight: 700;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* ── Progress bar ── */
-    .progress-track {
-      height: 6px;
-      background: var(--bg3);
-      border-radius: 3px;
-      overflow: hidden;
-      margin: 8px 0;
-    }
-    .progress-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width 0.4s ease, background 0.4s ease;
-    }
-
-    /* ── Window meta ── */
-    .window-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-top: 6px;
-    }
-    .meta-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 12px;
-      color: var(--text2);
-    }
-    .meta-row .label { }
+    .window-card { background: var(--bg2); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+    .window-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+    .window-label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text2); }
+    .window-pct { font-size: 28px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+    .progress-track { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; margin: 8px 0; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease, background 0.4s ease; }
+    .window-meta { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+    .meta-row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text2); }
     .meta-row .value { font-variant-numeric: tabular-nums; }
-    .pace-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: var(--text2);
-      margin-top: 2px;
-    }
+    .pace-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); margin-top: 2px; }
     .pace-rate { color: var(--text); font-weight: 500; }
     .pace-warn { color: var(--orange); }
     .pace-ok { color: var(--green); }
@@ -213,304 +138,478 @@
 
     /* ── Alert banner ── */
     .alert-banner {
-      background: #ff9f0a22;
-      border: 1px solid #ff9f0a55;
-      border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 11px;
-      color: var(--orange);
-      margin-top: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      background: #ff9f0a22; border: 1px solid #ff9f0a55; border-radius: 6px;
+      padding: 6px 10px; font-size: 11px; color: var(--orange);
+      margin-top: 8px; display: flex; align-items: center; gap: 6px;
     }
-    .alert-banner.danger {
-      background: #ff453a22;
-      border-color: #ff453a55;
-      color: var(--red);
-    }
+    .alert-banner.danger { background: #ff453a22; border-color: #ff453a55; color: var(--red); }
 
     /* ── Extra usage ── */
     .extra-usage {
-      background: var(--bg2);
-      border-radius: var(--radius);
-      padding: 10px 14px;
-      margin-bottom: 10px;
-      font-size: 12px;
-      color: var(--text2);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      background: var(--bg2); border-radius: var(--radius); padding: 10px 14px;
+      margin-bottom: 10px; font-size: 12px; color: var(--text2);
+      display: flex; align-items: center; justify-content: space-between;
     }
     .extra-usage .value { color: var(--text); font-weight: 500; }
 
     /* ── Charts tab ── */
     .charts-container { display: flex; flex-direction: column; gap: 10px; }
-    .time-range-bar {
-      display: flex;
-      gap: 4px;
-      flex-wrap: wrap;
-    }
+    .time-range-bar { display: flex; gap: 4px; flex-wrap: wrap; }
     .range-btn {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      color: var(--text2);
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.15s;
+      background: var(--bg2); border: 1px solid var(--border); color: var(--text2);
+      padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.15s;
     }
-    .range-btn.active {
-      background: var(--accent-dim);
-      border-color: var(--accent);
-      color: var(--accent);
-    }
+    .range-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
     .range-btn:hover:not(.active) { color: var(--text); border-color: var(--bg3); }
-    .chart-wrapper {
-      background: var(--bg2);
-      border-radius: var(--radius);
-      padding: 12px;
-    }
-    .chart-title {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: var(--text2);
-      margin-bottom: 8px;
-    }
+    .chart-wrapper { background: var(--bg2); border-radius: var(--radius); padding: 12px; }
+    .chart-title { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text2); margin-bottom: 8px; }
     canvas { max-width: 100%; }
-    .no-history {
-      text-align: center;
-      color: var(--text2);
-      padding: 30px;
-      font-size: 12px;
-    }
+    .no-history { text-align: center; color: var(--text2); padding: 30px; font-size: 12px; }
 
     /* ── Footer ── */
     .footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 16px 10px;
-      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px 10px; border-top: 1px solid var(--border); flex-shrink: 0;
     }
     .footer-left { display: flex; align-items: center; gap: 6px; }
     .updated-text { font-size: 11px; color: var(--text2); }
     .footer-right { display: flex; gap: 4px; }
     .btn-small {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      color: var(--text2);
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.15s;
+      background: var(--bg2); border: 1px solid var(--border); color: var(--text2);
+      padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.15s;
     }
     .btn-small:hover { color: var(--text); border-color: var(--bg3); }
     .btn-small.danger:hover { color: var(--red); border-color: var(--red); }
 
+    /* ── Settings view ── */
+    .settings-view { flex: 1; overflow-y: auto; padding: 12px 16px; }
+    .settings-view::-webkit-scrollbar { width: 4px; }
+    .settings-view::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
+    .section { margin-bottom: 16px; }
+    .section-title {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+      text-transform: uppercase; color: var(--text2); margin-bottom: 6px;
+    }
+    .card { background: var(--bg2); border-radius: var(--radius); overflow: hidden; }
+    .row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-bottom: 1px solid var(--border); gap: 10px;
+    }
+    .row:last-child { border-bottom: none; }
+    .row-label { flex: 1; }
+    .row-label .title { font-size: 13px; }
+    .row-label .sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
+    .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track { position: absolute; inset: 0; background: var(--bg3); border-radius: 20px; cursor: pointer; transition: background 0.2s; }
+    .toggle-thumb { position: absolute; width: 16px; height: 16px; top: 2px; left: 2px; background: white; border-radius: 50%; transition: transform 0.2s; pointer-events: none; }
+    .toggle input:checked ~ .toggle-track { background: var(--green); }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(16px); }
+    .slider-row { flex-direction: column; align-items: stretch; gap: 6px; }
+    .slider-header { display: flex; align-items: center; justify-content: space-between; }
+    input[type=range] { -webkit-appearance: none; width: 100%; height: 4px; background: var(--bg3); border-radius: 2px; outline: none; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+    .slider-value { font-size: 12px; color: var(--accent); font-weight: 500; min-width: 36px; text-align: right; }
+    .btn {
+      padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 500;
+      cursor: pointer; border: 1px solid var(--border); background: var(--bg3);
+      color: var(--text); transition: all 0.15s; white-space: nowrap;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.danger { color: var(--red); }
+    .btn.danger:hover { border-color: var(--red); background: #ff453a22; }
+    .btn.primary { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+    .setting-select {
+      background: var(--bg3); color: var(--text); border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px 8px; font-size: 12px; cursor: pointer;
+    }
+    .account-name { font-size: 13px; color: var(--text); font-weight: 500; }
+    .account-info { font-size: 12px; color: var(--text2); }
+    .plan-pill { background: var(--accent-dim); color: var(--accent); font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
+    .disclaimer { font-size: 11px; color: var(--text2); text-align: center; padding: 10px 0 4px; line-height: 1.5; }
+
     /* ── Hidden ── */
     .hidden { display: none !important; }
-
-    /* ── Account bar ── */
-    .account-bar {
-      display: flex;
-      align-items: center;
-      padding: 5px 10px;
-      gap: 6px;
-      border-bottom: 1px solid var(--border);
-      min-height: 36px;
-    }
-    .account-pills {
-      display: flex;
-      gap: 5px;
-      overflow-x: auto;
-      flex: 1;
-      scrollbar-width: none;
-    }
-    .account-pills::-webkit-scrollbar { display: none; }
-    .account-pill {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 8px;
-      border-radius: 20px;
-      background: var(--bg2);
-      border: 1.5px solid transparent;
-      cursor: pointer;
-      font-size: 11px;
-      white-space: nowrap;
-      transition: all 0.15s;
-      -webkit-app-region: no-drag;
-    }
-    .account-pill.active {
-      border-color: var(--accent);
-      background: var(--accent-dim);
-    }
-    .account-pill:hover:not(.active) { border-color: var(--bg3); }
-    .acct-label { color: var(--text); }
-    .acct-pct { color: var(--text2); font-variant-numeric: tabular-nums; }
-    .acct-add-btn {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text2);
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      font-size: 15px;
-      line-height: 1;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      transition: all 0.15s;
-      -webkit-app-region: no-drag;
-    }
-    .acct-add-btn:hover { border-color: var(--accent); color: var(--accent); }
   </style>
 </head>
 <body>
 
-<!-- Header -->
+<!-- Header — two left-side variants swap on settings open/close -->
 <div class="header">
-  <div class="header-left">
+  <div class="header-left" id="mainHeaderLeft">
     <h1>Claude Tracker</h1>
     <span class="plan-badge hidden" id="planBadge">Pro</span>
   </div>
-  <div class="header-right">
+  <div class="header-left hidden" id="settingsHeaderLeft">
+    <button class="icon-btn" id="backBtn" title="Back">←</button>
+    <span style="font-size:15px;font-weight:600">Settings</span>
+  </div>
+  <div class="header-right" id="mainHeaderRight">
     <button class="icon-btn" id="refreshBtn" title="Refresh">↻</button>
     <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
   </div>
 </div>
 
-<!-- Account bar -->
-<div class="account-bar hidden" id="accountBar">
-  <div class="account-pills" id="accountPills"></div>
-  <button class="acct-add-btn" id="addAccountBtn" title="Add account">+</button>
-</div>
+<!-- ════════════════ MAIN CONTENT ════════════════ -->
+<div id="mainContent">
 
-<!-- Tabs -->
-<div class="tabs" id="tabsBar">
-  <button class="tab active" data-tab="usage" data-i18n="tabUsage">Usage</button>
-  <button class="tab hidden" data-tab="charts" id="chartsTab" data-i18n="tabCharts">Charts</button>
-</div>
-
-<!-- Usage tab -->
-<div class="content" id="tabUsage">
-
-  <!-- Auth prompt -->
-  <div id="authPrompt" class="auth-prompt hidden">
-    <div class="emoji">🔒</div>
-    <h2 style="font-size:15px" data-i18n="signIn">Sign in to Claude</h2>
-    <p data-i18n="signInDesc">Claude Tracker needs access to your claude.ai session to display usage data.</p>
-    <button class="btn-primary" id="signInBtn" data-i18n="signInBtn">Sign In</button>
-    <p style="font-size:11px;color:var(--text2)" data-i18n="unofficial">Unofficial tool — not affiliated with Anthropic</p>
+  <!-- Account bar -->
+  <div class="account-bar hidden" id="accountBar">
+    <div class="account-pills" id="accountPills"></div>
+    <button class="acct-add-btn" id="addAccountBtn" title="Add account">+</button>
   </div>
 
-  <!-- Main usage content -->
-  <div id="usageContent">
-    <div class="loading-row hidden" id="loadingRow">
-      <div class="spinner"></div>
-      <span data-i18n="loading">Loading usage data…</span>
+  <!-- Tabs -->
+  <div class="tabs" id="tabsBar">
+    <button class="tab active" data-tab="usage" data-i18n="tabUsage">Usage</button>
+    <button class="tab hidden" data-tab="charts" id="chartsTab" data-i18n="tabCharts">Charts</button>
+  </div>
+
+  <!-- Usage tab -->
+  <div class="content" id="tabUsage">
+
+    <!-- Auth prompt -->
+    <div id="authPrompt" class="auth-prompt hidden">
+      <div class="emoji">🔒</div>
+      <h2 style="font-size:15px" data-i18n="signIn">Sign in to Claude</h2>
+      <p data-i18n="signInDesc">Claude Tracker needs access to your claude.ai session to display usage data.</p>
+      <button class="btn-primary" id="signInBtn" data-i18n="signInBtn">Sign In</button>
+      <p style="font-size:11px;color:var(--text2)" data-i18n="unofficial">Unofficial tool — not affiliated with Anthropic</p>
     </div>
 
-    <!-- Plan header -->
-    <div class="plan-header hidden" id="planHeader">
-      <span data-i18n="plan">Plan</span>: <strong id="planName">—</strong>
-    </div>
+    <!-- Main usage content -->
+    <div id="usageContent">
+      <div class="loading-row hidden" id="loadingRow">
+        <div class="spinner"></div>
+        <span data-i18n="loading">Loading usage data…</span>
+      </div>
 
-    <!-- 5-hour window -->
-    <div class="window-card" id="card5hr">
-      <div class="window-header">
-        <span class="window-label" data-i18n="window5hr">5-Hour Window</span>
-        <span class="window-pct" id="pct5hr">—</span>
+      <!-- Plan header -->
+      <div class="plan-header hidden" id="planHeader">
+        <span data-i18n="plan">Plan</span>: <strong id="planName">—</strong>
       </div>
-      <div class="progress-track">
-        <div class="progress-fill" id="bar5hr" style="width:0%;background:var(--green)"></div>
-      </div>
-      <div class="window-meta">
-        <div class="meta-row">
-          <span class="label" data-i18n="resetsIn">Resets in</span>
-          <span class="value" id="reset5hr">—</span>
+
+      <!-- 5-hour window -->
+      <div class="window-card" id="card5hr">
+        <div class="window-header">
+          <span class="window-label" data-i18n="window5hr">5-Hour Window</span>
+          <span class="window-pct" id="pct5hr">—</span>
         </div>
-        <div class="pace-row hidden" id="pace5hrRow">
-          <div class="pace-dot" id="pace5hrDot"></div>
-          <span class="pace-rate" id="pace5hrRate"></span>
-          <span id="pace5hrMsg"></span>
+        <div class="progress-track">
+          <div class="progress-fill" id="bar5hr" style="width:0%;background:var(--green)"></div>
         </div>
-      </div>
-      <div class="alert-banner hidden" id="alert5hr"></div>
-    </div>
-
-    <!-- 7-day window -->
-    <div class="window-card" id="card7day">
-      <div class="window-header">
-        <span class="window-label" data-i18n="window7day">7-Day Window</span>
-        <span class="window-pct" id="pct7day">—</span>
-      </div>
-      <div class="progress-track">
-        <div class="progress-fill" id="bar7day" style="width:0%;background:var(--green)"></div>
-      </div>
-      <div class="window-meta">
-        <div class="meta-row">
-          <span class="label" data-i18n="resetsIn">Resets in</span>
-          <span class="value" id="reset7day">—</span>
+        <div class="window-meta">
+          <div class="meta-row">
+            <span class="label" data-i18n="resetsIn">Resets in</span>
+            <span class="value" id="reset5hr">—</span>
+          </div>
+          <div class="pace-row hidden" id="pace5hrRow">
+            <div class="pace-dot" id="pace5hrDot"></div>
+            <span class="pace-rate" id="pace5hrRate"></span>
+            <span id="pace5hrMsg"></span>
+          </div>
         </div>
-        <div class="pace-row hidden" id="pace7dayRow">
-          <div class="pace-dot" id="pace7dayDot"></div>
-          <span class="pace-rate" id="pace7dayRate"></span>
-          <span id="pace7dayMsg"></span>
-        </div>
+        <div class="alert-banner hidden" id="alert5hr"></div>
       </div>
-      <div class="alert-banner hidden" id="alert7day"></div>
-    </div>
 
-    <!-- Extra usage (pay-as-you-go) -->
-    <div class="extra-usage hidden" id="extraUsage">
-      <span data-i18n="payAsYouGo">Pay-as-you-go credits used</span>
-      <span class="value" id="extraUsageVal">—</span>
-    </div>
+      <!-- 7-day window -->
+      <div class="window-card" id="card7day">
+        <div class="window-header">
+          <span class="window-label" data-i18n="window7day">7-Day Window</span>
+          <span class="window-pct" id="pct7day">—</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="bar7day" style="width:0%;background:var(--green)"></div>
+        </div>
+        <div class="window-meta">
+          <div class="meta-row">
+            <span class="label" data-i18n="resetsIn">Resets in</span>
+            <span class="value" id="reset7day">—</span>
+          </div>
+          <div class="pace-row hidden" id="pace7dayRow">
+            <div class="pace-dot" id="pace7dayDot"></div>
+            <span class="pace-rate" id="pace7dayRate"></span>
+            <span id="pace7dayMsg"></span>
+          </div>
+        </div>
+        <div class="alert-banner hidden" id="alert7day"></div>
+      </div>
 
-    <!-- Error state -->
-    <div id="errorState" class="hidden" style="color:var(--red);padding:12px;font-size:12px;background:var(--bg2);border-radius:var(--radius)"></div>
+      <!-- Extra usage (pay-as-you-go) -->
+      <div class="extra-usage hidden" id="extraUsage">
+        <span data-i18n="payAsYouGo">Pay-as-you-go credits used</span>
+        <span class="value" id="extraUsageVal">—</span>
+      </div>
+
+      <!-- Error state -->
+      <div id="errorState" class="hidden" style="color:var(--red);padding:12px;font-size:12px;background:var(--bg2);border-radius:var(--radius)"></div>
+    </div>
   </div>
-</div>
 
-<!-- Charts tab -->
-<div class="content hidden" id="tabCharts">
-  <div class="charts-container">
-    <div class="time-range-bar" id="timeRangeBar">
-      <button class="range-btn" data-range="1">1h</button>
-      <button class="range-btn" data-range="3">3h</button>
-      <button class="range-btn" data-range="12">12h</button>
-      <button class="range-btn active" data-range="24">1d</button>
-      <button class="range-btn" data-range="168">7d</button>
-      <button class="range-btn" data-range="720">30d</button>
+  <!-- Charts tab -->
+  <div class="content hidden" id="tabCharts">
+    <div class="charts-container">
+      <div class="time-range-bar" id="timeRangeBar">
+        <button class="range-btn" data-range="1">1h</button>
+        <button class="range-btn" data-range="3">3h</button>
+        <button class="range-btn" data-range="12">12h</button>
+        <button class="range-btn active" data-range="24">1d</button>
+        <button class="range-btn" data-range="168">7d</button>
+        <button class="range-btn" data-range="720">30d</button>
+      </div>
+      <div class="chart-wrapper">
+        <div class="chart-title">5-Hour Window</div>
+        <canvas id="chart5hr" height="120"></canvas>
+      </div>
+      <div class="chart-wrapper">
+        <div class="chart-title">7-Day Window</div>
+        <canvas id="chart7day" height="120"></canvas>
+      </div>
+      <div class="no-history hidden" id="noHistory" data-i18n="noHistory">No history yet — data is collected every 5 minutes</div>
     </div>
+  </div>
 
-    <div class="chart-wrapper">
-      <div class="chart-title">5-Hour Window</div>
-      <canvas id="chart5hr" height="120"></canvas>
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <span class="updated-text" id="updatedText">—</span>
     </div>
-    <div class="chart-wrapper">
-      <div class="chart-title">7-Day Window</div>
-      <canvas id="chart7day" height="120"></canvas>
+    <div class="footer-right">
+      <button class="btn-small danger" id="quitBtn">Quit</button>
     </div>
-    <div class="no-history hidden" id="noHistory" data-i18n="noHistory">No history yet — data is collected every 5 minutes</div>
   </div>
-</div>
 
-<!-- Footer -->
-<div class="footer">
-  <div class="footer-left">
-    <span class="updated-text" id="updatedText">—</span>
+</div><!-- /#mainContent -->
+
+<!-- ════════════════ SETTINGS VIEW ════════════════ -->
+<div class="settings-view hidden" id="settingsView">
+
+  <!-- Accounts -->
+  <div class="section">
+    <div class="section-title">Accounts</div>
+    <div class="card" id="settingsAccountsCard"></div>
+    <div class="card" style="margin-top:8px">
+      <div class="row">
+        <div class="row-label"><div class="title">Add Account</div></div>
+        <button class="btn primary" id="sAddAccountBtn">+ Add</button>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Check for updates</div></div>
+        <button class="btn" id="sCheckUpdatesBtn">Check Now</button>
+      </div>
+    </div>
   </div>
-  <div class="footer-right">
-    <button class="btn-small" id="footerSettings" data-i18n="settingsBtn">Settings</button>
-    <button class="btn-small danger" id="quitBtn">Quit</button>
+
+  <!-- Display -->
+  <div class="section">
+    <div class="section-title">Display</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-label"><div class="title">Language</div></div>
+        <select class="setting-select" id="sLanguage">
+          <option value="en">English</option>
+          <option value="es">Español</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Menu bar window</div></div>
+        <select class="setting-select" id="sMenuBarWindow">
+          <option value="five_hour">5-Hour</option>
+          <option value="seven_day">7-Day</option>
+        </select>
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label"><div class="title">Popup scale</div></div>
+          <span class="slider-value" id="sScaleVal">100%</span>
+        </div>
+        <input type="range" id="sPopupScale" min="75" max="150" step="25" value="100">
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Charts tab</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="sShowChartsTab">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Pace indicator</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="sShowPaceIndicator">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label">
+            <div class="title">Pace rate window</div>
+            <div class="sub">Lookback period for pace calculation</div>
+          </div>
+          <span class="slider-value" id="sPaceRateVal">5m</span>
+        </div>
+        <input type="range" id="sPaceRateWindow" min="30" max="1800" step="30" value="300">
+      </div>
+    </div>
   </div>
-</div>
+
+  <!-- Refresh -->
+  <div class="section">
+    <div class="section-title">Refresh Interval</div>
+    <div class="card">
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label"><div class="title">Check usage every</div></div>
+          <span class="slider-value" id="sRefreshVal">30s</span>
+        </div>
+        <input type="range" id="sRefreshInterval" min="5" max="60" step="5" value="30">
+      </div>
+    </div>
+  </div>
+
+  <!-- 5-Hour Reset Notification -->
+  <div class="section">
+    <div class="section-title">5-Hour Window Reset</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-label"><div class="title">Enabled</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="sNotifyFiveHourReset">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label">
+            <div class="title">Duration</div>
+            <div class="sub">0 = persistent until dismissed</div>
+          </div>
+          <span class="slider-value" id="sFiveHourDurationVal">5s</span>
+        </div>
+        <input type="range" id="sNotifyFiveHourDuration" min="0" max="30" step="1" value="5">
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Sound</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="sNotifyFiveHourSound">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Test</div></div>
+        <button class="btn" id="sTestFiveHourBtn">Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7-Day Reset Notification -->
+  <div class="section">
+    <div class="section-title">7-Day Window Reset</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-label"><div class="title">Enabled</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="sNotifySevenDayReset">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label">
+            <div class="title">Duration</div>
+            <div class="sub">0 = persistent until dismissed</div>
+          </div>
+          <span class="slider-value" id="sSevenDayDurationVal">5s</span>
+        </div>
+        <input type="range" id="sNotifySevenDayDuration" min="0" max="30" step="1" value="5">
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Sound</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="sNotifySevenDaySound">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Test</div></div>
+        <button class="btn" id="sTestSevenDayBtn">Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pace Alerts -->
+  <div class="section">
+    <div class="section-title">Pace Alerts</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-label">
+          <div class="title">Pace alerts</div>
+          <div class="sub">Notify when limit will be hit before reset</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="sPaceAlertEnabled">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label">
+            <div class="title">Alert threshold</div>
+            <div class="sub">Warn when &lt; N minutes before limit</div>
+          </div>
+          <span class="slider-value" id="sPaceThresholdVal">30m</span>
+        </div>
+        <input type="range" id="sPaceAlertThreshold" min="5" max="60" step="5" value="30">
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label"><div class="title">Alert duration</div></div>
+          <span class="slider-value" id="sPaceDurationVal">5s</span>
+        </div>
+        <input type="range" id="sPaceAlertToastDuration" min="0" max="30" step="1" value="5">
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Sound</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="sPaceAlertSound">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Test pace alert</div></div>
+        <button class="btn" id="sTestPaceBtn">Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- System -->
+  <div class="section">
+    <div class="section-title">System</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-label"><div class="title">Open at login</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="sOpenAtLogin">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row">
+        <div class="row-label">
+          <div class="title">Auto-install updates</div>
+          <div class="sub">Check for updates on launch and open download page</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="sAutoInstallUpdates">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    Unofficial tool — not affiliated with or endorsed by Anthropic.<br>
+    Uses undocumented claude.ai endpoints that may change at any time.
+  </div>
+</div><!-- /#settingsView -->
 
 <script>
   // ═══════════════════════════════════════════════
@@ -529,7 +628,6 @@
       resetsIn: 'Resets in',
       payAsYouGo: 'Pay-as-you-go credits used',
       noHistory: 'No history yet — data is collected every 5 minutes',
-      settingsBtn: 'Settings',
       onTrack: '· on track',
       fullIn: d => `· full in ${d} ⚠`,
       limitReached: d => `⚠ Limit reached in ~${d}`,
@@ -537,7 +635,7 @@
       justNow: 'just now',
       secsAgo: n => `${n}s ago`,
       minsAgo: n => `${Math.floor(n / 60)}m ago`,
-      hrsAgo: n => `${Math.floor(n / 3600)}h ago`,
+      hrsAgo:  n => `${Math.floor(n / 3600)}h ago`,
     },
     es: {
       tabUsage: 'Uso', tabCharts: 'Gráficos',
@@ -551,7 +649,6 @@
       resetsIn: 'Se reinicia en',
       payAsYouGo: 'Créditos de pago por uso utilizados',
       noHistory: 'Sin historial aún — los datos se recopilan cada 5 minutos',
-      settingsBtn: 'Ajustes',
       onTrack: '· al ritmo',
       fullIn: d => `· lleno en ${d} ⚠`,
       limitReached: d => `⚠ Límite alcanzado en ~${d}`,
@@ -559,7 +656,7 @@
       justNow: 'ahora mismo',
       secsAgo: n => `hace ${n}s`,
       minsAgo: n => `hace ${Math.floor(n / 60)}m`,
-      hrsAgo: n => `hace ${Math.floor(n / 3600)}h`,
+      hrsAgo:  n => `hace ${Math.floor(n / 3600)}h`,
     },
   };
 
@@ -578,11 +675,11 @@
   // ═══════════════════════════════════════════════
   // State
   // ═══════════════════════════════════════════════
-  let currentState = null;
+  let currentState    = null;
   let currentSettings = null;
-  let activeTab = 'usage';
-  let chartRange = 24; // hours
-  let charts = {};
+  let activeTab       = 'usage';
+  let chartRange      = 24;
+  let charts          = {};
   let countdownInterval = null;
 
   // ═══════════════════════════════════════════════
@@ -590,31 +687,20 @@
   // ═══════════════════════════════════════════════
   function urgencyColor(util) {
     const u = Math.min(1.0, Math.max(0, util));
-    const hue = Math.round((1 - u) * 120);
-    const sat = Math.round(60 + u * 35);
-    return `hsl(${hue},${sat}%,50%)`;
+    return `hsl(${Math.round((1 - u) * 120)},${Math.round(60 + u * 35)}%,50%)`;
   }
-
-  function fmtPct(util) {
-    return Math.round(util * 100) + '%';
-  }
+  function fmtPct(util)      { return Math.round(util * 100) + '%'; }
+  function fmtSeconds(s)     { return s < 60 ? s + 's' : Math.round(s / 60) + 'm'; }
+  function secondsUntil(iso) { return Math.max(0, (new Date(iso) - Date.now()) / 1000); }
 
   function fmtDuration(seconds) {
     if (seconds <= 0) return 'now';
-    const d = Math.floor(seconds / 86400);
-    const h = Math.floor((seconds % 86400) / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
+    const d = Math.floor(seconds / 86400), h = Math.floor((seconds % 86400) / 3600),
+          m = Math.floor((seconds % 3600) / 60), s = Math.floor(seconds % 60);
     if (d > 0) return `${d}d ${h}h ${m}m`;
     if (h > 0) return `${h}h ${m}m`;
     if (m > 0) return `${m}m ${s}s`;
     return `${s}s`;
-  }
-
-  function secondsUntil(isoStr) {
-    if (!isoStr) return 0;
-    const diff = (new Date(isoStr) - Date.now()) / 1000;
-    return Math.max(0, diff);
   }
 
   function timeAgo(isoStr) {
@@ -634,23 +720,18 @@
       .filter(p => (now - p.timestamp) < maxAgeMs && p[windowKey] != null)
       .map(p => ({ t: p.timestamp / 1000, v: p[windowKey] }));
     if (pts.length < 2) return null;
-    const span = pts[pts.length - 1].t - pts[0].t;
-    if (span < 15) return null;
-
+    if (pts[pts.length - 1].t - pts[0].t < 15) return null;
     const lambda = Math.log(2) / ((maxAgeMs / 1000) / 2);
     let sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
     for (const { t, v } of pts) {
-      const age = now / 1000 - t;
-      const w = Math.exp(-lambda * age);
+      const age = now / 1000 - t, w = Math.exp(-lambda * age);
       sw += w; swx += w * t; swy += w * v; swxx += w * t * t; swxy += w * t * v;
     }
     const denom = sw * swxx - swx * swx;
     if (Math.abs(denom) < 1e-10) return null;
     const slope = (sw * swxy - swx * swy) / denom;
-    const ratePerHour = slope * 3600;
     const cur = pts[pts.length - 1].v;
-    const timeToFull = slope > 0 ? ((1 - cur) / slope) : null;
-    return { ratePerHour, timeToFull };
+    return { ratePerHour: slope * 3600, timeToFull: slope > 0 ? ((1 - cur) / slope) : null };
   }
 
   // ═══════════════════════════════════════════════
@@ -665,11 +746,9 @@
     for (const acc of state.accounts) {
       const pill = document.createElement('div');
       pill.className = 'account-pill' + (acc.id === state.activeAccountId ? ' active' : '');
-
       const labelEl = document.createElement('span');
       labelEl.className = 'acct-label';
       labelEl.textContent = acc.email ? acc.email.split('@')[0] : 'Account';
-
       const pct = acc.isAuthenticated && acc.fiveHourPct != null ? acc.fiveHourPct + '%' : '—';
       const color = acc.isAuthenticated && acc.fiveHourPct != null
         ? urgencyColor(acc.fiveHourPct / 100) : 'var(--text2)';
@@ -677,7 +756,6 @@
       pctEl.className = 'acct-pct';
       pctEl.style.color = color;
       pctEl.textContent = pct;
-
       pill.append(labelEl, pctEl);
       pill.addEventListener('click', () => window.claude.switchAccount(acc.id));
       pills.appendChild(pill);
@@ -685,7 +763,7 @@
   }
 
   // ═══════════════════════════════════════════════
-  // Render
+  // Render usage
   // ═══════════════════════════════════════════════
   function renderState(state) {
     currentState = state;
@@ -696,10 +774,8 @@
     const authenticated = state.isAuthenticated;
     document.getElementById('authPrompt').classList.toggle('hidden', authenticated);
     document.getElementById('usageContent').classList.toggle('hidden', !authenticated);
-
     if (!authenticated) return;
 
-    // Plan badge (header) + plan header (usage section)
     const plan = state.accountInfo?.plan;
     const badge = document.getElementById('planBadge');
     const planHeader = document.getElementById('planHeader');
@@ -713,25 +789,18 @@
       planHeader.classList.add('hidden');
     }
 
-    // Loading
     document.getElementById('loadingRow').classList.toggle('hidden', !state.isLoading);
 
-    // Error
     const errEl = document.getElementById('errorState');
-    if (state.error) {
-      errEl.textContent = '⚠ ' + state.error;
-      errEl.classList.remove('hidden');
-    } else {
-      errEl.classList.add('hidden');
-    }
+    if (state.error) { errEl.textContent = '⚠ ' + state.error; errEl.classList.remove('hidden'); }
+    else errEl.classList.add('hidden');
 
     const usage = state.usage;
     if (!usage) return;
 
-    renderWindow('5hr', usage.five_hour, state.history, 'fiveHour');
+    renderWindow('5hr',  usage.five_hour, state.history, 'fiveHour');
     renderWindow('7day', usage.seven_day, state.history, 'sevenDay');
 
-    // Extra usage
     const extra = usage.extra_usage;
     const extraEl = document.getElementById('extraUsage');
     if (extra?.is_enabled && extra.used_credits != null) {
@@ -743,74 +812,56 @@
       extraEl.classList.add('hidden');
     }
 
-    // Updated text
     document.getElementById('updatedText').textContent =
       state.lastUpdated ? t('updated', timeAgo(state.lastUpdated)) : '—';
 
-    // Charts
     if (activeTab === 'charts') renderCharts();
+
+    // Refresh settings account list if open
+    if (!document.getElementById('settingsView').classList.contains('hidden')) {
+      renderSettingsAccounts(state);
+    }
   }
 
   function renderWindow(id, win, history, histKey) {
-    if (!win) {
-      document.getElementById(`card${id}`).classList.add('hidden');
-      return;
-    }
+    if (!win) { document.getElementById(`card${id}`).classList.add('hidden'); return; }
     document.getElementById(`card${id}`).classList.remove('hidden');
-
-    const util = win.utilization;
-    const color = urgencyColor(util);
-
+    const util = win.utilization, color = urgencyColor(util);
     document.getElementById(`pct${id}`).textContent = fmtPct(util);
     document.getElementById(`pct${id}`).style.color = color;
-
     const bar = document.getElementById(`bar${id}`);
     bar.style.width = Math.min(100, Math.round(util * 100)) + '%';
     bar.style.background = color;
 
-    // Pace
     const showPace = currentSettings?.showPaceIndicator !== false;
-    const paceRow = document.getElementById(`pace${id}Row`);
+    const paceRow  = document.getElementById(`pace${id}Row`);
     if (showPace && history?.length > 1) {
       const pace = computePace(history, histKey);
       if (pace) {
         paceRow.classList.remove('hidden');
-        const rateStr = (pace.ratePerHour >= 0 ? '+' : '') + pace.ratePerHour.toFixed(1) + '%/hr';
-        document.getElementById(`pace${id}Rate`).textContent = rateStr;
+        document.getElementById(`pace${id}Rate`).textContent =
+          (pace.ratePerHour >= 0 ? '+' : '') + pace.ratePerHour.toFixed(1) + '%/hr';
         const dot = document.getElementById(`pace${id}Dot`);
         const resetSecs = secondsUntil(win.resets_at);
-
-        let msg = '';
-        let warnClass = 'pace-ok';
+        let msg = '', warnClass = 'pace-ok';
         if (pace.timeToFull != null && pace.ratePerHour > 0) {
-          if (pace.timeToFull < resetSecs) {
-            warnClass = 'pace-warn';
-            msg = t('fullIn', fmtDuration(pace.timeToFull));
-          } else {
-            msg = t('onTrack');
-          }
+          if (pace.timeToFull < resetSecs) { warnClass = 'pace-warn'; msg = t('fullIn', fmtDuration(pace.timeToFull)); }
+          else msg = t('onTrack');
         }
         document.getElementById(`pace${id}Msg`).textContent = msg;
         document.getElementById(`pace${id}Msg`).className = warnClass;
         dot.style.background = pace.ratePerHour > 0 ? color : 'var(--text2)';
-      } else {
-        paceRow.classList.add('hidden');
-      }
-    } else {
-      paceRow.classList.add('hidden');
-    }
+      } else paceRow.classList.add('hidden');
+    } else paceRow.classList.add('hidden');
 
-    // Alert banner
-    const alertEl = document.getElementById(`alert${id}`);
+    const alertEl   = document.getElementById(`alert${id}`);
     const threshold = (currentSettings?.paceAlertThreshold || 30) * 60;
-    const pace2 = computePace(history, histKey);
+    const pace2     = computePace(history, histKey);
     if (pace2?.timeToFull != null && pace2.timeToFull < threshold && util < 1.0) {
       alertEl.classList.remove('hidden');
       alertEl.className = 'alert-banner' + (util > 0.9 ? ' danger' : '');
       alertEl.textContent = t('limitReached', fmtDuration(pace2.timeToFull));
-    } else {
-      alertEl.classList.add('hidden');
-    }
+    } else alertEl.classList.add('hidden');
   }
 
   function startCountdown() {
@@ -818,50 +869,31 @@
     countdownInterval = setInterval(() => {
       if (!currentState?.usage) return;
       const u = currentState.usage;
-      if (u.five_hour) {
-        document.getElementById('reset5hr').textContent =
-          fmtDuration(secondsUntil(u.five_hour.resets_at));
-      }
-      if (u.seven_day) {
-        document.getElementById('reset7day').textContent =
-          fmtDuration(secondsUntil(u.seven_day.resets_at));
-      }
-      if (currentState.lastUpdated) {
-        document.getElementById('updatedText').textContent =
-          t('updated', timeAgo(currentState.lastUpdated));
-      }
+      if (u.five_hour) document.getElementById('reset5hr').textContent = fmtDuration(secondsUntil(u.five_hour.resets_at));
+      if (u.seven_day) document.getElementById('reset7day').textContent = fmtDuration(secondsUntil(u.seven_day.resets_at));
+      if (currentState.lastUpdated)
+        document.getElementById('updatedText').textContent = t('updated', timeAgo(currentState.lastUpdated));
     }, 1000);
   }
 
   // ═══════════════════════════════════════════════
   // Charts
   // ═══════════════════════════════════════════════
-
-  // Shared crosshair plugin — draws a vertical dashed line and syncs across all charts
   const crosshairPlugin = {
     id: 'crosshair',
     afterDraw(chart) {
       if (chart._crosshairIdx == null) return;
-      const meta = chart.getDatasetMeta(0);
-      const pt   = meta.data[chart._crosshairIdx];
+      const meta = chart.getDatasetMeta(0), pt = meta.data[chart._crosshairIdx];
       if (!pt) return;
-      const { ctx } = chart;
-      const yAxis = chart.scales.y;
-      ctx.save();
-      ctx.beginPath();
-      ctx.setLineDash([4, 4]);
-      ctx.strokeStyle = 'rgba(142,142,147,0.5)';
-      ctx.lineWidth = 1;
-      ctx.moveTo(pt.x, yAxis.top);
-      ctx.lineTo(pt.x, yAxis.bottom);
-      ctx.stroke();
-      ctx.restore();
+      const { ctx } = chart, yAxis = chart.scales.y;
+      ctx.save(); ctx.beginPath(); ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(142,142,147,0.5)'; ctx.lineWidth = 1;
+      ctx.moveTo(pt.x, yAxis.top); ctx.lineTo(pt.x, yAxis.bottom); ctx.stroke(); ctx.restore();
     },
     afterEvent(chart, args) {
       const { event } = args;
       if (event.type === 'mouseout') {
-        chart._crosshairIdx = null;
-        args.changed = true;
+        chart._crosshairIdx = null; args.changed = true;
         Object.values(charts).forEach(c => { if (c !== chart) { c._crosshairIdx = null; c.update('none'); } });
         return;
       }
@@ -869,8 +901,7 @@
       if (!els.length) return;
       const idx = els[0].index;
       if (chart._crosshairIdx === idx) return;
-      chart._crosshairIdx = idx;
-      args.changed = true;
+      chart._crosshairIdx = idx; args.changed = true;
       Object.values(charts).forEach(c => { if (c !== chart) { c._crosshairIdx = idx; c.update('none'); } });
     },
   };
@@ -878,36 +909,21 @@
 
   function getChartScales(rangeHours) {
     const timeConfig = rangeHours <= 24
-      ? { unit: 'hour',  displayFormats: { hour:  'HH:mm'       } }
+      ? { unit: 'hour', displayFormats: { hour: 'HH:mm' } }
       : rangeHours <= 72
-      ? { unit: 'hour',  displayFormats: { hour:  'EEE HH:mm'   } }
-      : { unit: 'day',   displayFormats: { day:   'MMM d'        } };
+      ? { unit: 'hour', displayFormats: { hour: 'EEE HH:mm' } }
+      : { unit: 'day',  displayFormats: { day:  'MMM d' } };
     return {
-      x: {
-        type: 'time',
-        time: timeConfig,
-        grid: { color: '#2c2c2e' },
-        ticks: { color: '#8e8e93', maxTicksLimit: 6, font: { size: 10 } },
-      },
-      y: {
-        min: 0, max: 100,
-        grid: { color: '#2c2c2e' },
-        ticks: { color: '#8e8e93', font: { size: 10 }, callback: v => v + '%' },
-      },
+      x: { type: 'time', time: timeConfig, grid: { color: '#2c2c2e' }, ticks: { color: '#8e8e93', maxTicksLimit: 6, font: { size: 10 } } },
+      y: { min: 0, max: 100, grid: { color: '#2c2c2e' }, ticks: { color: '#8e8e93', font: { size: 10 }, callback: v => v + '%' } },
     };
   }
 
   function chartTooltipOpts() {
     return {
-      mode: 'index',
-      intersect: false,
+      mode: 'index', intersect: false,
       callbacks: {
-        title: ctx => {
-          if (!ctx.length) return '';
-          return new Date(ctx[0].parsed.x).toLocaleString([], {
-            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-          });
-        },
+        title: ctx => ctx.length ? new Date(ctx[0].parsed.x).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '',
         label: ctx => ctx.parsed.y + '%',
       },
     };
@@ -918,48 +934,23 @@
     const history = currentState.history || [];
     const cutoff  = Date.now() - chartRange * 3600 * 1000;
     const pts     = history.filter(p => p.timestamp >= cutoff);
-
     document.getElementById('noHistory').classList.toggle('hidden', pts.length >= 2);
-
     const usage  = currentState.usage;
     const color5 = usage?.five_hour ? urgencyColor(usage.five_hour.utilization) : '#c084fc';
     const color7 = usage?.seven_day ? urgencyColor(usage.seven_day.utilization) : '#34c759';
-
     renderChart('chart5hr',  pts, 'fiveHour', color5);
     renderChart('chart7day', pts, 'sevenDay', color7);
   }
 
   function renderChart(canvasId, pts, key, color) {
-    const data = pts
-      .filter(p => p[key] != null)
-      .map(p => ({ x: p.timestamp, y: Math.round(p[key] * 100) }));
-
-    if (charts[canvasId]) {
-      charts[canvasId].destroy();
-      delete charts[canvasId];
-    }
-
+    const data = pts.filter(p => p[key] != null).map(p => ({ x: p.timestamp, y: Math.round(p[key] * 100) }));
+    if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
     charts[canvasId] = new Chart(canvas, {
       type: 'line',
-      data: {
-        datasets: [{
-          data,
-          borderColor: color,
-          backgroundColor: color + '22',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: true,
-          tension: 0.3,
-        }],
-      },
-      options: {
-        responsive: true,
-        animation: false,
-        plugins: { legend: { display: false }, tooltip: chartTooltipOpts() },
-        scales: getChartScales(chartRange),
-      },
+      data: { datasets: [{ data, borderColor: color, backgroundColor: color + '22', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 }] },
+      options: { responsive: true, animation: false, plugins: { legend: { display: false }, tooltip: chartTooltipOpts() }, scales: getChartScales(chartRange) },
     });
   }
 
@@ -974,10 +965,7 @@
     if (tab === 'charts') renderCharts();
   }
 
-  document.querySelectorAll('.tab').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-  });
-
+  document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
   document.querySelectorAll('.range-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
@@ -988,7 +976,180 @@
   });
 
   // ═══════════════════════════════════════════════
-  // Settings integration
+  // Settings view
+  // ═══════════════════════════════════════════════
+  function showSettings() {
+    document.getElementById('mainHeaderLeft').classList.add('hidden');
+    document.getElementById('settingsHeaderLeft').classList.remove('hidden');
+    document.getElementById('mainHeaderRight').classList.add('hidden');
+    document.getElementById('mainContent').classList.add('hidden');
+    document.getElementById('settingsView').classList.remove('hidden');
+    updateSettingsUI(currentSettings);
+    renderSettingsAccounts(currentState);
+  }
+
+  function hideSettings() {
+    document.getElementById('mainHeaderLeft').classList.remove('hidden');
+    document.getElementById('settingsHeaderLeft').classList.add('hidden');
+    document.getElementById('mainHeaderRight').classList.remove('hidden');
+    document.getElementById('mainContent').classList.remove('hidden');
+    document.getElementById('settingsView').classList.add('hidden');
+  }
+
+  function updateSettingsUI(s) {
+    if (!s) return;
+    const setCheck  = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+    const setRange  = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+    const setSelect = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+
+    setSelect('sLanguage', s.language || 'en');
+    setSelect('sMenuBarWindow', s.menuBarWindow || 'five_hour');
+    setRange('sPopupScale', (s.popupScale || 1.0) * 100);
+    document.getElementById('sScaleVal').textContent = Math.round((s.popupScale || 1.0) * 100) + '%';
+    setCheck('sShowChartsTab', s.showChartsTab !== false);
+    setCheck('sShowPaceIndicator', s.showPaceIndicator !== false);
+    setRange('sPaceRateWindow', s.paceRateWindow || 300);
+    document.getElementById('sPaceRateVal').textContent = fmtSeconds(s.paceRateWindow || 300);
+    setRange('sRefreshInterval', s.refreshInterval || 30);
+    document.getElementById('sRefreshVal').textContent = (s.refreshInterval || 30) + 's';
+    setCheck('sNotifyFiveHourReset', s.notifyFiveHourReset !== false);
+    setRange('sNotifyFiveHourDuration', s.notifyFiveHourDuration ?? 5);
+    document.getElementById('sFiveHourDurationVal').textContent = (s.notifyFiveHourDuration ?? 5) === 0 ? '∞' : (s.notifyFiveHourDuration ?? 5) + 's';
+    setCheck('sNotifyFiveHourSound', s.notifyFiveHourSound !== false);
+    setCheck('sNotifySevenDayReset', s.notifySevenDayReset !== false);
+    setRange('sNotifySevenDayDuration', s.notifySevenDayDuration ?? 5);
+    document.getElementById('sSevenDayDurationVal').textContent = (s.notifySevenDayDuration ?? 5) === 0 ? '∞' : (s.notifySevenDayDuration ?? 5) + 's';
+    setCheck('sNotifySevenDaySound', s.notifySevenDaySound !== false);
+    setCheck('sOpenAtLogin', !!s.openAtLogin);
+    setCheck('sAutoInstallUpdates', !!s.autoInstallUpdates);
+    setCheck('sPaceAlertEnabled', s.paceAlertEnabled !== false);
+    setRange('sPaceAlertThreshold', s.paceAlertThreshold || 30);
+    document.getElementById('sPaceThresholdVal').textContent = (s.paceAlertThreshold || 30) + 'm';
+    setRange('sPaceAlertToastDuration', s.paceAlertToastDuration ?? 5);
+    document.getElementById('sPaceDurationVal').textContent = (s.paceAlertToastDuration ?? 5) === 0 ? '∞' : (s.paceAlertToastDuration ?? 5) + 's';
+    setCheck('sPaceAlertSound', s.paceAlertSound !== false);
+  }
+
+  function renderSettingsAccounts(state) {
+    if (!state?.accounts) return;
+    const card = document.getElementById('settingsAccountsCard');
+    if (!card) return;
+    card.innerHTML = '';
+    const total = state.accounts.length;
+    for (const acc of state.accounts) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const lbl = document.createElement('div');
+      lbl.className = 'row-label';
+      const nameEl = document.createElement('div');
+      nameEl.className = 'account-name';
+      nameEl.textContent = acc.name || acc.email || 'Account';
+      if (acc.plan && acc.plan !== 'Unknown') {
+        const pill = document.createElement('span');
+        pill.className = 'plan-pill';
+        pill.textContent = acc.plan;
+        nameEl.appendChild(pill);
+      }
+      const infoEl = document.createElement('div');
+      infoEl.className = 'account-info';
+      infoEl.textContent = acc.isAuthenticated ? (acc.email || 'Signed in') : 'Not signed in';
+      lbl.append(nameEl, infoEl);
+      const btns = document.createElement('div');
+      btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0';
+      if (acc.isAuthenticated) {
+        const b = document.createElement('button');
+        b.className = 'btn danger'; b.textContent = 'Sign Out';
+        b.addEventListener('click', () => window.claude.signOutAccount(acc.id));
+        btns.appendChild(b);
+      } else {
+        const b = document.createElement('button');
+        b.className = 'btn primary'; b.textContent = 'Sign In';
+        b.addEventListener('click', () => window.claude.signInAccount(acc.id));
+        btns.appendChild(b);
+      }
+      if (total > 1) {
+        const rm = document.createElement('button');
+        rm.className = 'btn danger'; rm.textContent = '×';
+        rm.style.padding = '5px 10px'; rm.title = 'Remove account';
+        rm.addEventListener('click', () => {
+          if (window.confirm('Remove ' + (acc.email || 'this account') + '?'))
+            window.claude.removeAccount(acc.id);
+        });
+        btns.appendChild(rm);
+      }
+      row.append(lbl, btns);
+      card.appendChild(row);
+    }
+  }
+
+  function bindSettings() {
+    function bindS(id, key) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('change', () => {
+        const val = el.type === 'checkbox' ? el.checked : el.type === 'range' ? Number(el.value) : el.value;
+        window.claude.setSetting(key, val);
+      });
+    }
+
+    // Live slider labels
+    document.getElementById('sPopupScale').addEventListener('input', e => { document.getElementById('sScaleVal').textContent = e.target.value + '%'; });
+    document.getElementById('sPaceRateWindow').addEventListener('input', e => { document.getElementById('sPaceRateVal').textContent = fmtSeconds(Number(e.target.value)); });
+    document.getElementById('sRefreshInterval').addEventListener('input', e => { document.getElementById('sRefreshVal').textContent = e.target.value + 's'; });
+    document.getElementById('sNotifyFiveHourDuration').addEventListener('input', e => { document.getElementById('sFiveHourDurationVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's'; });
+    document.getElementById('sNotifySevenDayDuration').addEventListener('input', e => { document.getElementById('sSevenDayDurationVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's'; });
+    document.getElementById('sPaceAlertThreshold').addEventListener('input', e => { document.getElementById('sPaceThresholdVal').textContent = e.target.value + 'm'; });
+    document.getElementById('sPaceAlertToastDuration').addEventListener('input', e => { document.getElementById('sPaceDurationVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's'; });
+
+    // Scale sends as fraction
+    document.getElementById('sPopupScale').addEventListener('change', e => window.claude.setSetting('popupScale', Number(e.target.value) / 100));
+
+    bindS('sLanguage',               'language');
+    bindS('sMenuBarWindow',          'menuBarWindow');
+    bindS('sShowChartsTab',          'showChartsTab');
+    bindS('sShowPaceIndicator',      'showPaceIndicator');
+    bindS('sPaceRateWindow',         'paceRateWindow');
+    bindS('sRefreshInterval',        'refreshInterval');
+    bindS('sNotifyFiveHourReset',    'notifyFiveHourReset');
+    bindS('sNotifyFiveHourDuration', 'notifyFiveHourDuration');
+    bindS('sNotifyFiveHourSound',    'notifyFiveHourSound');
+    bindS('sNotifySevenDayReset',    'notifySevenDayReset');
+    bindS('sNotifySevenDayDuration', 'notifySevenDayDuration');
+    bindS('sNotifySevenDaySound',    'notifySevenDaySound');
+    bindS('sOpenAtLogin',            'openAtLogin');
+    bindS('sAutoInstallUpdates',     'autoInstallUpdates');
+    bindS('sPaceAlertEnabled',       'paceAlertEnabled');
+    bindS('sPaceAlertThreshold',     'paceAlertThreshold');
+    bindS('sPaceAlertToastDuration', 'paceAlertToastDuration');
+    bindS('sPaceAlertSound',         'paceAlertSound');
+
+    document.getElementById('sAddAccountBtn').addEventListener('click', () => window.claude.addAccount());
+
+    document.getElementById('sCheckUpdatesBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('sCheckUpdatesBtn');
+      btn.textContent = 'Checking…'; btn.disabled = true;
+      const result = await window.claude.checkUpdates();
+      btn.disabled = false;
+      btn.textContent = result?.hasUpdate ? `v${result.version} available` : 'Up to date';
+      setTimeout(() => { btn.textContent = 'Check Now'; }, 4000);
+    });
+
+    function bindTestBtn(id, fn) {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.addEventListener('click', async () => {
+        btn.textContent = '…'; btn.disabled = true;
+        try { await fn(); } catch(e) {}
+        setTimeout(() => { btn.textContent = 'Test'; btn.disabled = false; }, 2000);
+      });
+    }
+    bindTestBtn('sTestFiveHourBtn', () => window.claude.testFiveHourNotification());
+    bindTestBtn('sTestSevenDayBtn', () => window.claude.testSevenDayNotification());
+    bindTestBtn('sTestPaceBtn',     () => window.claude.testPaceNotification());
+  }
+
+  // ═══════════════════════════════════════════════
+  // Settings applied (from main process)
   // ═══════════════════════════════════════════════
   function applySettings(s) {
     currentSettings = s;
@@ -1007,23 +1168,22 @@
   });
   document.getElementById('addAccountBtn').addEventListener('click', () => window.claude.addAccount());
   document.getElementById('refreshBtn').addEventListener('click', () => window.claude.refresh());
-  document.getElementById('settingsBtn').addEventListener('click', () => window.claude.openSettings());
-  document.getElementById('footerSettings').addEventListener('click', () => window.claude.openSettings());
+  document.getElementById('settingsBtn').addEventListener('click', showSettings);
+  document.getElementById('backBtn').addEventListener('click', hideSettings);
   document.getElementById('quitBtn').addEventListener('click', () => window.claude.quit());
 
-  window.claude.onStateUpdate(state => {
-    renderState(state);
-  });
+  window.claude.onStateUpdate(state => renderState(state));
+  window.claude.onSettingsUpdate(s => applySettings(s));
+  window.claude.onShowSettings(showSettings);
 
   // ═══════════════════════════════════════════════
   // Init
   // ═══════════════════════════════════════════════
+  bindSettings();
+
   (async () => {
     try {
-      const [state, settings] = await Promise.all([
-        window.claude.getState(),
-        window.claude.getSettings(),
-      ]);
+      const [state, settings] = await Promise.all([window.claude.getState(), window.claude.getSettings()]);
       applySettings(settings);
       renderState(state);
       startCountdown();
