@@ -26,6 +26,7 @@ const schema = {
   showChartsTab:          { type: 'boolean', default: true },
   showPaceIndicator:      { type: 'boolean', default: true },
   paceRateWindow:         { type: 'number', minimum: 30, maximum: 1800, default: 300 },
+  chartRangeHours:        { type: 'number', default: 24 },
 
   notifyFiveHourReset:    { type: 'boolean', default: true },
   notifyFiveHourSound:    { type: 'boolean', default: true },
@@ -33,6 +34,14 @@ const schema = {
   notifySevenDayReset:    { type: 'boolean', default: true },
   notifySevenDaySound:    { type: 'boolean', default: true },
   notifySevenDayDuration: { type: 'number', minimum: 0, maximum: 30, default: 5 },
+
+  // Threshold notifications — fire once when crossing a configurable % level
+  notifyFiveHourThreshold:    { type: 'boolean', default: false },
+  notifyFiveHourThresholdPct: { type: 'number', minimum: 50, maximum: 99, default: 80 },
+  notifySevenDayThreshold:    { type: 'boolean', default: false },
+  notifySevenDayThresholdPct: { type: 'number', minimum: 50, maximum: 99, default: 80 },
+  notifyThresholdSound:       { type: 'boolean', default: true },
+  notifyThresholdDuration:    { type: 'number', minimum: 0, maximum: 30, default: 5 },
 
   paceAlertEnabled:       { type: 'boolean', default: true },
   paceAlertThreshold:     { type: 'number', minimum: 5,  maximum: 60,   default: 30 },

@@ -1,6 +1,6 @@
 {
   "name": "claude-tracker-windows",
-  "version": "1.2.4",
+  "version": "1.3.0",
   "description": "Windows port of ClaudeTracker — monitor Claude AI usage limits from the system tray",
   "main": "src/main.js",
   "scripts": {
@@ -46,7 +46,8 @@
     "publish": {
       "provider": "github",
       "owner": "Unvitewewe",
-      "repo": "ClaudeTracker-Windows"
+      "repo": "ClaudeTracker-Windows",
+      "releaseType": "release"
     }
   }
 }

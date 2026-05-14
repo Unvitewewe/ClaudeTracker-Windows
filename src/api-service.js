@@ -63,14 +63,21 @@ class ApiService extends EventEmitter {
 
   async _fetch(endpoint) {
     await this._waitReady();
+    // Use JSON.stringify to safely embed the endpoint URL — prevents injection if the
+    // value ever contains backticks, quotes, or special characters.
+    const endpointJson = JSON.stringify(endpoint);
     const result = await this._window.webContents.executeJavaScript(`
       (async () => {
         try {
-          const r = await fetch('${endpoint}', {
+          const r = await fetch(${endpointJson}, {
             credentials: 'include',
             headers: { 'Accept': 'application/json' }
           });
-          if (!r.ok) return { __error: 'HTTP_' + r.status };
+          if (!r.ok) {
+            let detail = '';
+            try { detail = await r.text(); } catch {}
+            return { __error: 'HTTP_' + r.status, __detail: detail.slice(0, 200) };
+          }
           return await r.json();
         } catch (e) {
           return { __error: e.message };

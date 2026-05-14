@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('claude', {
   signOutAccount: (id)        => ipcRenderer.invoke('sign-out-account', id),
   signInAccount:  (id)        => ipcRenderer.invoke('sign-in-account', id),
 
+  exportHistory:  (id)        => ipcRenderer.invoke('export-history', id),
+
   onStateUpdate:    (cb) => { ipcRenderer.on('state-update',    (_e, s) => cb(s)); },
   onSettingsUpdate: (cb) => { ipcRenderer.on('settings-update', (_e, s) => cb(s)); },
   onShowSettings:   (cb) => { ipcRenderer.on('show-settings',   ()      => cb());  },

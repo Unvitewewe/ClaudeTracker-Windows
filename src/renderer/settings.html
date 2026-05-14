@@ -312,6 +312,61 @@
     </div>
   </div>
 
+  <!-- Threshold notifications -->
+  <div class="section">
+    <div class="section-title">Usage Threshold Alerts</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-label">
+          <div class="title">5-Hour threshold alert</div>
+          <div class="sub">Notify once when 5h window crosses a % level</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="notifyFiveHourThreshold">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row slider-row" id="fiveHourThresholdPctRow">
+        <div class="slider-header">
+          <div class="row-label"><div class="title">5-Hour threshold level</div></div>
+          <span class="slider-value" id="fiveHourThresholdPctVal">80%</span>
+        </div>
+        <input type="range" id="notifyFiveHourThresholdPct" min="50" max="99" step="5" value="80">
+      </div>
+      <div class="row">
+        <div class="row-label">
+          <div class="title">7-Day threshold alert</div>
+          <div class="sub">Notify once when 7d window crosses a % level</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="notifySevenDayThreshold">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row slider-row" id="sevenDayThresholdPctRow">
+        <div class="slider-header">
+          <div class="row-label"><div class="title">7-Day threshold level</div></div>
+          <span class="slider-value" id="sevenDayThresholdPctVal">80%</span>
+        </div>
+        <input type="range" id="notifySevenDayThresholdPct" min="50" max="99" step="5" value="80">
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label"><div class="title">Alert duration</div></div>
+          <span class="slider-value" id="thresholdDurationVal">5s</span>
+        </div>
+        <input type="range" id="notifyThresholdDuration" min="0" max="30" step="1" value="5">
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Sound</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="notifyThresholdSound">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+  </div>
+
   <!-- Pace alerts -->
   <div class="section">
     <div class="section-title">Pace Alerts</div>
@@ -458,6 +513,18 @@
     setCheck('openAtLogin', !!s.openAtLogin);
     setCheck('autoInstallUpdates', !!s.autoInstallUpdates);
 
+    // Threshold alerts
+    setCheck('notifyFiveHourThreshold', !!s.notifyFiveHourThreshold);
+    setRange('notifyFiveHourThresholdPct', s.notifyFiveHourThresholdPct || 80);
+    document.getElementById('fiveHourThresholdPctVal').textContent = (s.notifyFiveHourThresholdPct || 80) + '%';
+    setCheck('notifySevenDayThreshold', !!s.notifySevenDayThreshold);
+    setRange('notifySevenDayThresholdPct', s.notifySevenDayThresholdPct || 80);
+    document.getElementById('sevenDayThresholdPctVal').textContent = (s.notifySevenDayThresholdPct || 80) + '%';
+    setRange('notifyThresholdDuration', s.notifyThresholdDuration ?? 5);
+    document.getElementById('thresholdDurationVal').textContent =
+      (s.notifyThresholdDuration ?? 5) === 0 ? '∞' : (s.notifyThresholdDuration ?? 5) + 's';
+    setCheck('notifyThresholdSound', s.notifyThresholdSound !== false);
+
     setCheck('paceAlertEnabled', s.paceAlertEnabled !== false);
     setRange('paceAlertThreshold', s.paceAlertThreshold || 30);
     document.getElementById('paceThresholdVal').textContent = (s.paceAlertThreshold || 30) + 'm';
@@ -574,6 +641,24 @@
   bind('notifySevenDaySound', 'notifySevenDaySound');
   bind('openAtLogin', 'openAtLogin');
   bind('autoInstallUpdates', 'autoInstallUpdates');
+  // Threshold alert sliders — live labels
+  document.getElementById('notifyFiveHourThresholdPct').addEventListener('input', e => {
+    document.getElementById('fiveHourThresholdPctVal').textContent = e.target.value + '%';
+  });
+  document.getElementById('notifySevenDayThresholdPct').addEventListener('input', e => {
+    document.getElementById('sevenDayThresholdPctVal').textContent = e.target.value + '%';
+  });
+  document.getElementById('notifyThresholdDuration').addEventListener('input', e => {
+    document.getElementById('thresholdDurationVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's';
+  });
+
+  bind('notifyFiveHourThreshold',    'notifyFiveHourThreshold');
+  bind('notifyFiveHourThresholdPct', 'notifyFiveHourThresholdPct');
+  bind('notifySevenDayThreshold',    'notifySevenDayThreshold');
+  bind('notifySevenDayThresholdPct', 'notifySevenDayThresholdPct');
+  bind('notifyThresholdDuration',    'notifyThresholdDuration');
+  bind('notifyThresholdSound',       'notifyThresholdSound');
+
   bind('paceAlertEnabled', 'paceAlertEnabled');
   bind('paceAlertThreshold', 'paceAlertThreshold');
   bind('paceAlertToastDuration', 'paceAlertToastDuration');

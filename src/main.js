@@ -7,7 +7,7 @@ const {
 const path          = require('path');
 const https         = require('https');
 const crypto        = require('crypto');
-const { exec }      = require('child_process');
+const { exec, spawn } = require('child_process');
 const ApiService    = require('./api-service');
 const store         = require('./store');
 
@@ -36,7 +36,9 @@ let activeAccountId = null;
 const apiServices   = new Map(); // accountId -> ApiService
 const accountStates = new Map(); // accountId -> state object
 const prevUsages    = new Map(); // accountId -> last usage (for reset detection)
-const lastPaceAlerts = new Map();// accountId -> timestamp
+const lastPaceAlerts  = new Map(); // accountId -> timestamp
+const thresholdFired  = new Map(); // accountId -> { five_hour: bool, seven_day: bool }
+const notificationLog = [];        // ring buffer, max 50, newest first
 
 // ── Windows
 let tray          = null;
@@ -333,6 +335,10 @@ async function onSessionFound(accountId) {
   const lw = loginWindows.get(accountId);
   if (lw && !lw.isDestroyed()) setTimeout(() => { if (!lw.isDestroyed()) lw.close(); }, 1500);
 
+  // Force fresh org lookup after session restores (cached ID may be stale)
+  const svc = apiServices.get(accountId);
+  if (svc) svc.clearOrgCache();
+
   await refreshAccount(accountId);
 }
 
@@ -391,7 +397,7 @@ async function refreshAllAccounts() {
 // ══════════════════════════════════════════════
 // Data refresh
 // ══════════════════════════════════════════════
-async function refreshAccount(accountId) {
+async function refreshAccount(accountId, retryCount = 0) {
   const svc = apiServices.get(accountId);
   const st  = accountStates.get(accountId);
   const acc = getAccount(accountId);
@@ -429,8 +435,10 @@ async function refreshAccount(accountId) {
     const normUsage = normalizeUsage(usage);
     const prev = prevUsages.get(accountId);
     if (prev) {
-      checkForReset(accountId, 'five_hour', prev.five_hour,  normUsage.five_hour,  '5-Hour Window');
-      checkForReset(accountId, 'seven_day', prev.seven_day,  normUsage.seven_day,  '7-Day Window');
+      checkForReset(accountId, 'five_hour', prev.five_hour, normUsage.five_hour, '5-Hour Window');
+      checkForReset(accountId, 'seven_day', prev.seven_day, normUsage.seven_day, '7-Day Window');
+      checkForThreshold(accountId, 'five_hour', prev.five_hour, normUsage.five_hour);
+      checkForThreshold(accountId, 'seven_day', prev.seven_day, normUsage.seven_day);
     }
     prevUsages.set(accountId, normUsage);
 
@@ -446,6 +454,15 @@ async function refreshAccount(accountId) {
   } catch (e) {
     if (e.message?.includes('401') || e.message?.includes('403')) {
       onSessionLost(accountId);
+      return;
+    }
+    // Retry transient errors (rate-limit, network glitch, webview not ready) with backoff
+    const isTransient = e.message?.includes('429') ||
+      e.message?.includes('WebView') ||
+      e.message?.includes('ERR_') ||
+      (!e.message?.includes('HTTP_') && !e.message?.includes('No organizations'));
+    if (retryCount < 2 && isTransient) {
+      setTimeout(() => refreshAccount(accountId, retryCount + 1), (retryCount + 1) * 2000);
       return;
     }
     st.error     = e.message;
@@ -467,6 +484,36 @@ function checkForReset(accountId, key, prev, curr, label) {
   if (prev.utilization > 0.05 && curr.utilization <= 0.05 && prev.resets_at !== curr.resets_at) {
     fireNotification(`${label} Reset${accountTag(accountId)}`, `Your ${label.toLowerCase()} has reset.`,
       store.get(durationKey, 5), store.get(soundKey, true));
+  }
+}
+
+function checkForThreshold(accountId, key, prev, curr) {
+  if (!prev || !curr) return;
+  const isFiveHour   = key === 'five_hour';
+  const enabledKey   = isFiveHour ? 'notifyFiveHourThreshold'    : 'notifySevenDayThreshold';
+  const pctKey       = isFiveHour ? 'notifyFiveHourThresholdPct' : 'notifySevenDayThresholdPct';
+  const label        = isFiveHour ? '5-Hour Window' : '7-Day Window';
+  if (!store.get(enabledKey, false)) return;
+
+  const threshold = store.get(pctKey, 80) / 100;
+  const tf = thresholdFired.get(accountId) || { five_hour: false, seven_day: false };
+
+  // Crossed threshold from below → fire once
+  if (prev.utilization < threshold && curr.utilization >= threshold && !tf[key]) {
+    tf[key] = true;
+    thresholdFired.set(accountId, { ...tf });
+    fireNotification(
+      `${label} at ${Math.round(threshold * 100)}%${accountTag(accountId)}`,
+      `Usage has reached ${Math.round(curr.utilization * 100)}%.`,
+      store.get('notifyThresholdDuration', 5),
+      store.get('notifyThresholdSound',    true)
+    );
+  }
+
+  // Reset tracker when the window resets
+  if (prev.utilization > 0.05 && curr.utilization <= 0.05) {
+    tf[key] = false;
+    thresholdFired.set(accountId, { ...tf });
   }
 }
 
@@ -500,14 +547,23 @@ function fireNotification(title, body, duration, sound) {
     n.show();
     if (sound) playSound();
     if (duration > 0) setTimeout(() => { try { n.close(); } catch {} }, duration * 1000);
+
+    notificationLog.unshift({ title, body, ts: Date.now() });
+    if (notificationLog.length > 50) notificationLog.pop();
+    pushStateUpdate();
   } catch(e) {
     console.error('[notify] error:', e.message);
   }
 }
 
 function playSound() {
-  // Play Windows system notification sound via PowerShell (reliable cross-version)
-  exec('powershell -NoProfile -Command "[System.Media.SystemSounds]::Asterisk.Play()"');
+  // windowsHide prevents a console window from flashing on each notification
+  const child = spawn(
+    'powershell',
+    ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', '[System.Media.SystemSounds]::Asterisk.Play()'],
+    { windowsHide: true, detached: true, stdio: 'ignore' }
+  );
+  child.unref();
 }
 
 function computePaceNode(history, key) {
@@ -564,6 +620,7 @@ function getSerializableState() {
     };
   });
 
+  const history = active?.history?.slice(-500) || [];
   return {
     // Multi-account
     accounts:        accountSummaries,
@@ -576,7 +633,12 @@ function getSerializableState() {
     accountInfo:     active?.accountInfo     || null,
     usage:           active?.usage           || null,
     lastUpdated:     active?.lastUpdated     || null,
-    history:         active?.history || [],
+    history,
+    pace: {
+      fiveHour: computePaceNode(history, 'fiveHour'),
+      sevenDay: computePaceNode(history, 'sevenDay'),
+    },
+    notificationLog: notificationLog.slice(0, 20),
   };
 }
 
@@ -606,6 +668,7 @@ function checkUpdates() {
         });
       });
     req.on('error', () => resolve({ hasUpdate: false }));
+    req.setTimeout(8000, () => { req.destroy(); resolve({ hasUpdate: false }); });
   });
 }
 
@@ -640,6 +703,13 @@ function getAllSettings() {
     openAtLogin:            store.get('openAtLogin',            false),
     autoInstallUpdates:     store.get('autoInstallUpdates',     false),
     language:               store.get('language',               'en'),
+
+    notifyFiveHourThreshold:    store.get('notifyFiveHourThreshold',    false),
+    notifyFiveHourThresholdPct: store.get('notifyFiveHourThresholdPct', 80),
+    notifySevenDayThreshold:    store.get('notifySevenDayThreshold',    false),
+    notifySevenDayThresholdPct: store.get('notifySevenDayThresholdPct', 80),
+    notifyThresholdSound:       store.get('notifyThresholdSound',       true),
+    notifyThresholdDuration:    store.get('notifyThresholdDuration',    5),
   };
 }
 
@@ -683,6 +753,8 @@ ipcMain.handle('remove-account', async (e, accountId) => {
   if (svc) { try { await svc.signOut(); } catch {} svc.destroy(); apiServices.delete(accountId); }
   accountStates.delete(accountId);
   prevUsages.delete(accountId);
+  lastPaceAlerts.delete(accountId);
+  thresholdFired.delete(accountId);
   store.delete(`history_${accountId}`);
 
   accounts = accounts.filter(a => a.id !== accountId);
@@ -734,4 +806,28 @@ ipcMain.handle('check-updates', async () => {
   const r = await checkUpdates();
   if (r.hasUpdate && r.url) shell.openExternal(r.url);
   return r;
+});
+
+ipcMain.handle('export-history', async (e, accountId) => {
+  const id = accountId || activeAccountId;
+  const st = accountStates.get(id);
+  if (!st?.history?.length) return { error: 'No history data available.' };
+
+  const rows = ['timestamp_iso,timestamp_ms,fiveHour_pct,sevenDay_pct'];
+  for (const p of st.history) {
+    const fh = p.fiveHour != null ? Math.round(p.fiveHour * 100) : '';
+    const sd = p.sevenDay != null ? Math.round(p.sevenDay * 100) : '';
+    rows.push(`${new Date(p.timestamp).toISOString()},${p.timestamp},${fh},${sd}`);
+  }
+  const csv = rows.join('\n');
+
+  const { dialog } = require('electron');
+  const { promises: fs } = require('fs');
+  const result = await dialog.showSaveDialog({
+    defaultPath: `claude-usage-${new Date().toISOString().slice(0, 10)}.csv`,
+    filters: [{ name: 'CSV Files', extensions: ['csv'] }],
+  });
+  if (result.canceled) return { canceled: true };
+  await fs.writeFile(result.filePath, csv, 'utf8');
+  return { path: result.filePath };
 });

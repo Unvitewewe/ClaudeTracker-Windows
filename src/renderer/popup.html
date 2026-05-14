@@ -375,6 +375,7 @@
       <span class="updated-text" id="updatedText">—</span>
     </div>
     <div class="footer-right">
+      <button class="btn-small" id="exportBtn" title="Export history as CSV">Export CSV</button>
       <button class="btn-small danger" id="quitBtn">Quit</button>
     </div>
   </div>
@@ -532,6 +533,55 @@
       <div class="row">
         <div class="row-label"><div class="title">Test</div></div>
         <button class="btn" id="sTestSevenDayBtn">Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Usage Threshold Alerts -->
+  <div class="section">
+    <div class="section-title">Usage Threshold Alerts</div>
+    <div class="card">
+      <div class="row">
+        <div class="row-label"><div class="title">5-Hour threshold</div><div class="sub">Notify once when crossing a % level</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="sNotifyFiveHourThreshold">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label"><div class="title">5-Hour level</div></div>
+          <span class="slider-value" id="sFiveHourThresholdPctVal">80%</span>
+        </div>
+        <input type="range" id="sNotifyFiveHourThresholdPct" min="50" max="99" step="5" value="80">
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">7-Day threshold</div><div class="sub">Notify once when crossing a % level</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="sNotifySevenDayThreshold">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label"><div class="title">7-Day level</div></div>
+          <span class="slider-value" id="sSevenDayThresholdPctVal">80%</span>
+        </div>
+        <input type="range" id="sNotifySevenDayThresholdPct" min="50" max="99" step="5" value="80">
+      </div>
+      <div class="row slider-row">
+        <div class="slider-header">
+          <div class="row-label"><div class="title">Alert duration</div></div>
+          <span class="slider-value" id="sThresholdDurVal">5s</span>
+        </div>
+        <input type="range" id="sNotifyThresholdDuration" min="0" max="30" step="1" value="5">
+      </div>
+      <div class="row">
+        <div class="row-label"><div class="title">Sound</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="sNotifyThresholdSound">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
       </div>
     </div>
   </div>
@@ -1020,6 +1070,15 @@
     setRange('sNotifySevenDayDuration', s.notifySevenDayDuration ?? 5);
     document.getElementById('sSevenDayDurationVal').textContent = (s.notifySevenDayDuration ?? 5) === 0 ? '∞' : (s.notifySevenDayDuration ?? 5) + 's';
     setCheck('sNotifySevenDaySound', s.notifySevenDaySound !== false);
+    setCheck('sNotifyFiveHourThreshold', !!s.notifyFiveHourThreshold);
+    setRange('sNotifyFiveHourThresholdPct', s.notifyFiveHourThresholdPct ?? 80);
+    document.getElementById('sFiveHourThresholdPctVal').textContent = (s.notifyFiveHourThresholdPct ?? 80) + '%';
+    setCheck('sNotifySevenDayThreshold', !!s.notifySevenDayThreshold);
+    setRange('sNotifySevenDayThresholdPct', s.notifySevenDayThresholdPct ?? 80);
+    document.getElementById('sSevenDayThresholdPctVal').textContent = (s.notifySevenDayThresholdPct ?? 80) + '%';
+    setRange('sNotifyThresholdDuration', s.notifyThresholdDuration ?? 5);
+    document.getElementById('sThresholdDurVal').textContent = (s.notifyThresholdDuration ?? 5) === 0 ? '∞' : (s.notifyThresholdDuration ?? 5) + 's';
+    setCheck('sNotifyThresholdSound', s.notifyThresholdSound !== false);
     setCheck('sOpenAtLogin', !!s.openAtLogin);
     setCheck('sAutoInstallUpdates', !!s.autoInstallUpdates);
     setCheck('sPaceAlertEnabled', s.paceAlertEnabled !== false);
@@ -1098,6 +1157,9 @@
     document.getElementById('sRefreshInterval').addEventListener('input', e => { document.getElementById('sRefreshVal').textContent = e.target.value + 's'; });
     document.getElementById('sNotifyFiveHourDuration').addEventListener('input', e => { document.getElementById('sFiveHourDurationVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's'; });
     document.getElementById('sNotifySevenDayDuration').addEventListener('input', e => { document.getElementById('sSevenDayDurationVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's'; });
+    document.getElementById('sNotifyFiveHourThresholdPct').addEventListener('input', e => { document.getElementById('sFiveHourThresholdPctVal').textContent = e.target.value + '%'; });
+    document.getElementById('sNotifySevenDayThresholdPct').addEventListener('input', e => { document.getElementById('sSevenDayThresholdPctVal').textContent = e.target.value + '%'; });
+    document.getElementById('sNotifyThresholdDuration').addEventListener('input', e => { document.getElementById('sThresholdDurVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's'; });
     document.getElementById('sPaceAlertThreshold').addEventListener('input', e => { document.getElementById('sPaceThresholdVal').textContent = e.target.value + 'm'; });
     document.getElementById('sPaceAlertToastDuration').addEventListener('input', e => { document.getElementById('sPaceDurationVal').textContent = e.target.value == 0 ? '∞' : e.target.value + 's'; });
 
@@ -1116,6 +1178,12 @@
     bindS('sNotifySevenDayReset',    'notifySevenDayReset');
     bindS('sNotifySevenDayDuration', 'notifySevenDayDuration');
     bindS('sNotifySevenDaySound',    'notifySevenDaySound');
+    bindS('sNotifyFiveHourThreshold',    'notifyFiveHourThreshold');
+    bindS('sNotifyFiveHourThresholdPct', 'notifyFiveHourThresholdPct');
+    bindS('sNotifySevenDayThreshold',    'notifySevenDayThreshold');
+    bindS('sNotifySevenDayThresholdPct', 'notifySevenDayThresholdPct');
+    bindS('sNotifyThresholdDuration',    'notifyThresholdDuration');
+    bindS('sNotifyThresholdSound',       'notifyThresholdSound');
     bindS('sOpenAtLogin',            'openAtLogin');
     bindS('sAutoInstallUpdates',     'autoInstallUpdates');
     bindS('sPaceAlertEnabled',       'paceAlertEnabled');
@@ -1171,6 +1239,15 @@
   document.getElementById('settingsBtn').addEventListener('click', showSettings);
   document.getElementById('backBtn').addEventListener('click', hideSettings);
   document.getElementById('quitBtn').addEventListener('click', () => window.claude.quit());
+
+  document.getElementById('exportBtn').addEventListener('click', async function() {
+    this.textContent = '…'; this.disabled = true;
+    try {
+      const r = await window.claude.exportHistory();
+      this.textContent = r?.error ? 'No data' : r?.canceled ? 'Export CSV' : 'Saved!';
+    } catch { this.textContent = 'Error'; }
+    setTimeout(() => { this.textContent = 'Export CSV'; this.disabled = false; }, 2500);
+  });
 
   window.claude.onStateUpdate(state => renderState(state));
   window.claude.onSettingsUpdate(s => applySettings(s));
